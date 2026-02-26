@@ -272,7 +272,7 @@ const TablaEstudianteCalificaciones = ({datos, estudiante, periodosMatriculados}
     };
 
     // Función para exportar el reporte a PDF
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         try {
             // Validar datos antes de proceder
             if (!materiasTabla || materiasTabla.length === 0) {
@@ -293,23 +293,55 @@ const TablaEstudianteCalificaciones = ({datos, estudiante, periodosMatriculados}
             const azulCorporativo = [0, 64, 138]; // #00408A
             const grisTexto = [51, 51, 51]; // #333
             
-            // Encabezado del documento
+            // Función para cargar imagen
+            const loadImageAsDataURL = async (src) => {
+                if (!src) return null;
+                const res = await fetch(src, { cache: "no-store" });
+                const blob = await res.blob();
+                return await new Promise((resolve, reject) => {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = reject;
+                    fr.readAsDataURL(blob);
+                });
+            };
+            
+            // Cargar imagen del conservatorio
+            const logoData = await loadImageAsDataURL('/ConservatorioNacional.png');
+            
+            // Encabezado azul (solo imagen + frase del decreto)
+            const alturaEncabezado = 45;
             doc.setFillColor(...azulCorporativo);
-            doc.rect(0, 0, pageWidth, 30, 'F');
+            doc.rect(0, 0, pageWidth, alturaEncabezado, 'F');
+            
+            // Imagen centrada (parte superior)
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', (pageWidth - 30) / 2, 3, 30, 30);
+            }
+            
+            // Frase del decreto (con espacio debajo de la imagen)
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Fundado por Decreto Ejecutivo de 26 de abril de 1900 del General Eloy Alfaro', pageWidth / 2, 38, { align: 'center' });
+            
+            // TÍTULOS EN LA PARTE BLANCA (debajo del encabezado azul)
+            let yPos = alturaEncabezado + 8;
             
             // Título principal
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(18);
+            doc.setTextColor(...grisTexto);
+            doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text('REPORTE DE CALIFICACIONES', pageWidth / 2, 15, { align: 'center' });
+            doc.text('REPORTE DE CALIFICACIONES', pageWidth / 2, yPos, { align: 'center' });
             
-            // Información del período
+            // Período debajo
             doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
             const descripcionPeriodo = periodosMatriculados[0]?.descripcion || 'Período no especificado';
-            doc.text(descripcionPeriodo, pageWidth / 2, 25, { align: 'center' });
+            doc.text(descripcionPeriodo, pageWidth / 2, yPos + 8, { align: 'center' });
             
             // Información del estudiante
-            let yPos = 45;
+            yPos += 20;
             doc.setTextColor(...grisTexto);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'normal');
