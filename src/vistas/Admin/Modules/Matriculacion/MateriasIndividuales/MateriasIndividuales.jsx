@@ -76,7 +76,7 @@ function MateriasIndividuales() {
     const handleDelete = (inscripcion) => {
         Swal.fire({
             title: '¿Estás seguro?',
-            text: `También se quitará la inscripción del horario`,
+            text: `También se quitara la inscripción del horario`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -85,36 +85,34 @@ function MateriasIndividuales() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Primero eliminar la inscripción
                 axios.delete(`${API_URL}/inscripcion/eliminar/${inscripcion.ID}`, {
                     headers: { Authorization: `Bearer ${token}` },
-                }).then(() => {
-                    console.log("este no tiene ID", inscripcion.Asignacion)
-
-                    setInscripciones((prevData) =>
-                        prevData.filter((d) => d.Inscripcion && d.Inscripcion.ID !== inscripcion.ID)
-                    );
                 })
-                // Eliminar usuario por PK
-                axios.delete(`${API_URL}/asignacion/eliminar/${inscripcion.Asignacion.ID}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
-                    .then(() => {
-
-
-
-                        Swal.fire({
-                            icon: "success",
-                            title: "Eliminado!",
-                            text: `La inscripción ha sido eliminada.`,
-                            iconColor: "#218838",
-                            confirmButtonText: "Entendido",
-                            confirmButtonColor: "#003F89",
-                        }
-                        );
-                    })
-                    .catch((error) => {
-                        ErrorMessage(error)
+                .then(() => {
+                    // Si удачно, eliminar la asignación
+                    return axios.delete(`${API_URL}/asignacion/eliminar/${inscripcion.Asignacion.ID}`, {
+                        headers: { Authorization: `Bearer ${token}` },
                     });
+                })
+                .then(() => {
+                    // Actualizar el estado local
+                    setInscripciones((prevData) =>
+                        prevData.filter((d) => d.ID !== inscripcion.ID)
+                    );
+                    
+                    Swal.fire({
+                        icon: "success",
+                        title: "Eliminado!",
+                        text: `La inscripción ha sido eliminada.`,
+                        iconColor: "#218838",
+                        confirmButtonText: "Entendido",
+                        confirmButtonColor: "#003F89",
+                    });
+                })
+                .catch((error) => {
+                    ErrorMessage(error)
+                });
             }
         });
 

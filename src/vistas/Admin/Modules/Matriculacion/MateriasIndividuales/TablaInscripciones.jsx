@@ -28,7 +28,11 @@ function TablaInscripciones({inscripciones,OnDelete}) {
                                         <td className='tabla-celda'>{item.Asignacion.Materia.nombre}</td>
                                         <td className='tabla-celda'>{`${item.Asignacion.Docente.primer_nombre} ${item.Asignacion.Docente.primer_apellido}`}</td>
                                         <td className='tabla-celda'>{`${item.Asignacion.dias[0]} ${item.Asignacion.horaInicio}-${item.Asignacion.horaFin}`}</td>
-                                        <td className='tabla-celda'>{`${item.Asignacion.dias[1]} ${item.Asignacion.hora1}-${item.Asignacion.hora2}`}</td>
+                                        <td className='tabla-celda'>
+                                            {item.Asignacion.hora1 && item.Asignacion.hora2 
+                                                ? `${item.Asignacion.dias[1]} ${item.Asignacion.hora1}-${item.Asignacion.hora2}` 
+                                                : "-"}
+                                        </td>
                                         <td className='botones-icon'>
                                             <FaTrash
                                                 size={20}
