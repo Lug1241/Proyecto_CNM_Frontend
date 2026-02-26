@@ -309,25 +309,24 @@ const TablaEstudianteCalificaciones = ({datos, estudiante, periodosMatriculados}
             // Cargar imagen del conservatorio
             const logoData = await loadImageAsDataURL('/ConservatorioNacional.png');
             
-            // Encabezado azul (solo imagen + frase del decreto)
+            // Encabezado (imagen + frase) SIN fondo de color para que el PNG se mezcle con el blanco
             const alturaEncabezado = 45;
-            doc.setFillColor(...azulCorporativo);
-            doc.rect(0, 0, pageWidth, alturaEncabezado, 'F');
-            
+            // No dibujamos rectángulo de color: dejamos fondo blanco del documento
+
             // Imagen centrada (parte superior)
             if (logoData) {
                 doc.addImage(logoData, 'PNG', (pageWidth - 30) / 2, 3, 30, 30);
             }
-            
-            // Frase del decreto (con espacio debajo de la imagen)
-            doc.setTextColor(255, 255, 255);
+
+            // Frase del decreto (con espacio debajo de la imagen), en color oscuro
+            doc.setTextColor(...grisTexto);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             doc.text('Fundado por Decreto Ejecutivo de 26 de abril de 1900 del General Eloy Alfaro', pageWidth / 2, 38, { align: 'center' });
-            
-            // TÍTULOS EN LA PARTE BLANCA (debajo del encabezado azul)
+
+            // TÍTULOS EN LA PARTE BLANCA (debajo del encabezado)
             let yPos = alturaEncabezado + 8;
-            
+
             // Título principal
             doc.setTextColor(...grisTexto);
             doc.setFontSize(16);
