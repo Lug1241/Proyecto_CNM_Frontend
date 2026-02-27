@@ -1,5 +1,6 @@
 import React from "react";
 import { Tabs, Tab, Container } from "react-bootstrap";
+import { useNavigate, useLocation } from 'react-router-dom';
 import Parcial from "./Parcial";
 import Quimestral from "./Quimestral";
 import Final from "./Final";
@@ -20,7 +21,9 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
     const esSecretaria = usuario.subRol?.toLowerCase() === "secretaria";
     return esSecretaria ? null : 1; // Secretaria: sin módulo activo, Profesor: módulo 1
   };
-
+  
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
     <>
       <div className="container-fluid p-0">
@@ -30,13 +33,27 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
       <Layout modules={modules} onNavigate={handleSidebarNavigation} activeModule={getActiveModule()}>
         <div className="content-container">
           <Container className="mt-4">
-            <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
-              <h2 className="mb-0">Gestión de Calificaciones</h2>
+            <div className="mb-3">
+              <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                <div>
+                  {soloLectura && (
+                    <button
+                      className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 px-3"
+                      style={{ maxWidth: "120px" }}
+                      onClick={() => {
+                        const idPeriodo = datosModulo?.idPeriodo || (location.state && location.state.idPeriodo);
+                        if (idPeriodo) navigate(`/secretaria/periodo/materias/${idPeriodo}`);
+                        else navigate(-1);
+                      }}
+                      title="Volver"
+                    >
+                      <i className="bi bi-arrow-left-circle-fill"></i> Regresar
+                    </button>
+                  )}
+                </div>
 
-              <div className="d-flex flex-column align-items-end gap-2">
-                {/* Línea de Exportaciones */}
                 <div className="d-flex align-items-center gap-2">
-                  <span className="label-text">Exportaciones:</span>
+                  <span className="label-text me-2">Exportaciones:</span>
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={handleExportPDF}
@@ -45,8 +62,15 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                     <i className="bi bi-file-earmark-pdf-fill"></i>
                   </button>
                 </div>
-                {/* Línea de Acciones */}
-                {!soloLectura && (
+              </div>
+
+              <div className="text-center mb-0">
+                <h2 className="mb-0">Gestión de Calificaciones</h2>
+              </div>
+
+              {/* Línea de Acciones (solo para no-secretaria) */}
+              {!soloLectura && (
+                <div className="d-flex justify-content-end mt-2">
                   <div className="d-flex align-items-center gap-2">
                     <span className="label-text">Acciones:</span>
                     <button className="btn btn-secondary btn-sm" title="Guardar" onClick={handleSave}>
@@ -56,9 +80,8 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                       <i className="bi bi-pencil-square"></i>
                     </button>
                   </div>
-                )}
-
-              </div>
+                </div>
+              )}
             </div>
             {/* TABS PRINCIPALES */}
             <Tabs activeKey={activeMainTab} id="calificaciones-tabs" className="mb-3" fill onSelect={(k) => setActiveMainTab(k)}>
