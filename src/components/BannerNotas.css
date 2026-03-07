@@ -1,0 +1,47 @@
+.banner-notas {
+  width: 100%;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.banner-notas.suave {
+  background-color: #fff8e1;
+  color: #8a5300;
+  border-left: 5px solid #ffb300;
+}
+
+.banner-notas.fuerte {
+  background-color: #fff3cd;
+  color: #7a3e00;
+  border-left: 5px solid #ff9800;
+}
+
+.banner-notas.critico {
+  background-color: #ffe5e5;
+  color: #9f1f1f;
+  border-left: 5px solid #ef5350;
+}
+
+.banner-notas.bloqueante {
+  background-color: #b71c1c;
+  color: #ffffff;
+  border-left: 5px solid #7f1010;
+}
+
+.banner-notas__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.banner-notas__texto {
+  flex: 1;
+}
+
+.banner-notas__dias {
+  font-weight: 700;
+}
