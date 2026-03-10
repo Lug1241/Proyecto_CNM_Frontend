@@ -41,6 +41,13 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
 
   const [datosOriginales, setDatosOriginales] = useState([]);
 
+  const getInscripcionId = (row) => row?.id_inscripcion ?? row?.idInscripcion;
+  const getPromedioParcial = (row) => {
+    const value = row?.["Promedio Final"] ?? row?.["PROMEDIO PARCIAL"] ?? row?.promedioFinal ?? 0;
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
   // Cada vez que lleguen datos de ambos parciales, se combinan
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -69,15 +76,15 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
 
           resultados.forEach(({ asignacion, estudiantes, quimestrales }) => {
             estudiantes.forEach(est => {
-              const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
-              const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
+              const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
+              const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
               const saved = quimestrales.find(q =>
-                q.idInscripcion === est.idInscripcion &&
+                String(getInscripcionId(q)) === String(est.idInscripcion) &&
                 q.quimestre === obtenerEtiquetaQuimestre()
               ) || {};
 
-              const parcial1 = parseFloat(p1["Promedio Final"] || 0);
-              const parcial2 = parseFloat(p2["Promedio Final"] || 0);
+              const parcial1 = getPromedioParcial(p1);
+              const parcial2 = getPromedioParcial(p2);
               const notaExamen = saved.examen ?? "";
 
               const { ponderacion70, ponderacion30, promedioFinal } = calcularPromedioQuimestral(parcial1, parcial2, notaExamen);
@@ -135,15 +142,15 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
           const estudiantes = respEstudiantes.data;
           const quimestrales = respQuimestrales.data;
           const nuevosDatos = estudiantes.map(est => {
-            const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
-            const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
+            const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
+            const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
             const saved = quimestrales.find(q =>
-              q.idInscripcion === est.idInscripcion &&
+              String(getInscripcionId(q)) === String(est.idInscripcion) &&
               q.quimestre === obtenerEtiquetaQuimestre()
             ) || {};
 
-            const parcial1 = parseFloat(p1["Promedio Final"] || 0);
-            const parcial2 = parseFloat(p2["Promedio Final"] || 0);
+            const parcial1 = getPromedioParcial(p1);
+            const parcial2 = getPromedioParcial(p2);
             const notaExamen = saved.examen ?? "";
 
             const { ponderacion70, ponderacion30, promedioFinal } = calcularPromedioQuimestral(parcial1, parcial2, notaExamen);
