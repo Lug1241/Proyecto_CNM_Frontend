@@ -65,6 +65,13 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
 
   const [datosOriginales, setDatosOriginales] = useState([]);
 
+  const getInscripcionId = (row) => row?.id_inscripcion ?? row?.idInscripcion;
+  const getPromedioParcial = (row) => {
+    const value = row?.["Promedio Final"] ?? row?.["PROMEDIO PARCIAL"] ?? row?.promedioFinal;
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? NaN : parsed;
+  };
+
   const [mostrarExtras, setMostrarExtras] = useState({
     extra1: false,
     extra2: false,
@@ -100,15 +107,15 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
 
           resultados.forEach(({ asignacion, estudiantes, quimestrales }) => {
             estudiantes.forEach(est => {
-              const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
-              const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
+              const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
+              const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
               const saved = quimestrales.find(q =>
-                q.idInscripcion === est.idInscripcion &&
+                String(getInscripcionId(q)) === String(est.idInscripcion) &&
                 q.quimestre === obtenerEtiquetaQuimestre()
               ) || {};
             
-              const parcial1 = parseFloat(p1["Promedio Final"]);
-              const parcial2 = parseFloat(p2["Promedio Final"]);
+              const parcial1 = getPromedioParcial(p1);
+              const parcial2 = getPromedioParcial(p2);
             
               const parcial1Valido = !isNaN(parcial1);
               const parcial2Valido = !isNaN(parcial2);
@@ -184,15 +191,15 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
           const quimestrales = respQuimestrales.data;
 
           const nuevosDatos = estudiantes.map(est => {
-            const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
-            const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion) || {};
+            const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
+            const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion)) || {};
             const saved = quimestrales.find(q =>
-              q.idInscripcion === est.idInscripcion &&
+              String(getInscripcionId(q)) === String(est.idInscripcion) &&
               q.quimestre === obtenerEtiquetaQuimestre()
             ) || {};
           
-            const parcial1 = parseFloat(p1["Promedio Final"]);
-            const parcial2 = parseFloat(p2["Promedio Final"]);
+            const parcial1 = getPromedioParcial(p1);
+            const parcial2 = getPromedioParcial(p2);
           
             const parcial1Valido = !isNaN(parcial1);
             const parcial2Valido = !isNaN(parcial2);
@@ -227,19 +234,19 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
           }); 
           
           const hayParcial1 = estudiantes.some(est => {
-            const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion);
-            return p1 && !isNaN(parseFloat(p1["Promedio Final"]));
+            const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion));
+            return p1 && !isNaN(getPromedioParcial(p1));
           });
           
           const hayParcial2 = estudiantes.some(est => {
-            const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion);
-            return p2 && !isNaN(parseFloat(p2["Promedio Final"]));
+            const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion));
+            return p2 && !isNaN(getPromedioParcial(p2));
           });
           
           const hayAmbosPromedios = estudiantes.some(est => {
-            const p1 = parcial1Data.find(p => p.id_inscripcion === est.idInscripcion);
-            const p2 = parcial2Data.find(p => p.id_inscripcion === est.idInscripcion);
-            return p1 && p2 && !isNaN(parseFloat(p1["Promedio Final"])) && !isNaN(parseFloat(p2["Promedio Final"]));
+            const p1 = parcial1Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion));
+            const p2 = parcial2Data.find(p => String(getInscripcionId(p)) === String(est.idInscripcion));
+            return p1 && p2 && !isNaN(getPromedioParcial(p1)) && !isNaN(getPromedioParcial(p2));
           });
           
           const hayExamen = quimestrales.some(q => !isNaN(parseFloat(q.examen)));

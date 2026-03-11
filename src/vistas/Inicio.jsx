@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Modulo from "../components/Modulo"; // O el componente que uses para mostrar los módulos
 import { getModulos } from "./getModulos";
 import { useAuth } from "../Utils/useAuth";
+import BannerNotas from "../components/BannerNotas";
 
 const Inicio = () => {
   // Protección de ruta - sin rol específico porque es para todos los usuarios autenticados
@@ -45,6 +46,7 @@ const Inicio = () => {
   return (
     <div>
       {usuario && <Header isAuthenticated={true} usuario={usuario} />}
+      {usuario?.subRol === 'Profesor' && <BannerNotas />}
       <h2 style={{ textAlign: "left", marginLeft: "20px" }}>Módulos</h2>
       <Modulo modulos={modulos} onModuloClick={handleModuloClick} />
     </div>
