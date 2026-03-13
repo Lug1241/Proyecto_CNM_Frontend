@@ -102,7 +102,7 @@ const TablaEstudianteCalificaciones = ({datos, estudiante, periodosMatriculados}
             notaq1: formatearNota(notaQ1),
             notaq2: formatearNota(notaQ2),
             notaFinal: formatearNota(notaFinal),
-            estado: determinarEstado(notaFinal),
+            estado: determinarEstado(notaFinal, examenSupletorio !== ""),
             equivalenciaQ1: obtenerEquivalencia(notaQ1),
             equivalenciaQ2: obtenerEquivalencia(notaQ2),
             equivalenciaFinal: obtenerEquivalencia(notaFinal)
