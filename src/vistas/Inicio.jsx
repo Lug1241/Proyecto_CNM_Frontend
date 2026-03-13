@@ -46,7 +46,7 @@ const Inicio = () => {
   return (
     <div>
       {usuario && <Header isAuthenticated={true} usuario={usuario} />}
-      {usuario?.subRol === 'Profesor' && <BannerNotas />}
+      {['Profesor', 'Vicerrector', 'Administrador'].includes(usuario?.subRol) && <BannerNotas />}
       <h2 style={{ textAlign: "left", marginLeft: "20px" }}>Módulos</h2>
       <Modulo modulos={modulos} onModuloClick={handleModuloClick} />
     </div>
