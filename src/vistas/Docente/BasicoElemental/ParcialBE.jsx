@@ -570,6 +570,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
         datos={datos}
         onChange={handleInputChange}
         columnasEditables={columnasEditables}
+        columnasColorear={columnasEditables}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}
