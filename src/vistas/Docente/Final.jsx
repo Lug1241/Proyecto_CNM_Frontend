@@ -79,7 +79,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
 
               const examenSupletorio = finalGuardado.examen_recuperacion ?? "";
               const pFinal = calcularPromedioFinalConSupletorio(promedioAnual, examenSupletorio);
-              const estado = determinarEstado(pFinal);
+              const estado = determinarEstado(pFinal, examenSupletorio !== "");
 
               todosLosDatos.push({
                 idInscripcion: est.idInscripcion,
@@ -144,7 +144,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
 
             const examenSupletorio = finalGuardado.examen_recuperacion ?? "";
             const pFinal = calcularPromedioFinalConSupletorio(promedioAnual, examenSupletorio);
-            const estado = determinarEstado(pFinal);
+            const estado = determinarEstado(pFinal, examenSupletorio !== "");
 
             return {
               idInscripcion: est.idInscripcion,
@@ -203,16 +203,16 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         return;
       }
 
-      // C) Validar que sea un número de 0.00 a 7.00
+      // C) Validar que sea un número de 0.00 a 10.00
       const regexDecimal = /^\d{1,2}(\.\d{0,2})?$/;
       if (value !== "") {
         const esNumeroValido = regexDecimal.test(value.trim());
         const valorNumerico = parseFloat(value);
-        if (!esNumeroValido || isNaN(valorNumerico) || valorNumerico < 0 || valorNumerico > 7) {
+        if (!esNumeroValido || isNaN(valorNumerico) || valorNumerico < 0 || valorNumerico > 10) {
           Swal.fire({
             icon: 'error',
             title: 'Error de Validación',
-            text: 'El valor debe estar entre 0.00 y 7.00 con máximo dos decimales.',
+            text: 'El valor debe estar entre 0.00 y 10.00 con máximo dos decimales.',
             confirmButtonColor: '#3085d6',
           });
           return;
@@ -230,7 +230,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
             const pFinal = calcularPromedioFinalConSupletorio(pAnualNum, value);
             newRow._promedioFinal = pFinal;
             newRow["Promedio Final"] = pFinal;
-            newRow["Estado"] = determinarEstado(pFinal);
+            newRow["Estado"] = determinarEstado(pFinal, value !== "");
 
           }
           return newRow;
@@ -375,11 +375,11 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
     }
 
     const examen = parseFloat(rowData["Examen Supletorio"]);
-    if (isNaN(examen) || examen < 0 || examen > 7) {
+    if (isNaN(examen) || examen < 0 || examen > 10) {
       Swal.fire({
         icon: "error",
         title: "Valor inválido",
-        text: "La nota del examen supletorio debe estar entre 0.00 y 7.00.",
+        text: "La nota del examen supletorio debe estar entre 0.00 y 10.00.",
       });
       return;
     }
@@ -400,7 +400,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
 
         // 👉 Recalcular estado y promedio
         const promedioFinalRecalculado = calcularPromedioFinalConSupletorio(rowData._promedioAnual, examen);
-        const estadoFinal = determinarEstado(promedioFinalRecalculado);
+        const estadoFinal = determinarEstado(promedioFinalRecalculado, true);
 
         const nuevaCopia = [...datos];
         nuevaCopia[rowIndex] = {
@@ -545,6 +545,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         onChange={handleInputChange}
         // Sólo la columna "Examen Supletorio" es editable
         columnasEditables={["Examen Supletorio"]}
+        columnasColorear={["Examen Supletorio"]}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}

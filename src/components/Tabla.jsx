@@ -9,7 +9,8 @@ const Tabla = ({
   columnas, columnasAgrupadas, datos, onChange, columnasEditables = [],
   mostrarEditar = true, mostrarGuardar = true, onEditar, onGuardar, onEliminar, inputsDisabled,
   isWithinRange, rangoTexto, globalEdit, forceEdit, clasePersonalizada = "", soloLectura, esPorSolicitud = false, esFilaDeshabilitada,
-  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow }) => {
+  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow,
+  columnasColorear = [] }) => {
   
   // Usar estado externo si existe, sino usar estado local
   const [localEditingRow, setLocalEditingRow] = useState(null);
@@ -145,8 +146,11 @@ const Tabla = ({
                   } else {
                     // Renderizamos las celdas normales
                     const esEditable = columnasEditables.includes(col);
+                    const colorCelda = columnasColorear.includes(col)
+                      ? (fila[col] !== undefined && fila[col] !== null && fila[col] !== "" ? "#d4edda" : "#f8d7da")
+                      : undefined;
                     return (
-                      <td key={j} className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`}>
+                      <td key={j} className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`} style={colorCelda ? { backgroundColor: colorCelda } : undefined}>
                         {/* Texto que solo se muestra en PDF */}
                         <span className="pdf-only">
                           {fila[col] !== undefined && fila[col] !== "" ? fila[col] : "-"}

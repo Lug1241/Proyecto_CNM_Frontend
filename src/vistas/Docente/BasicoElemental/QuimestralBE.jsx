@@ -613,6 +613,7 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
         datos={datos}
         onChange={handleInputChange}
         columnasEditables={columnasEditables}
+        columnasColorear={columnasEditables}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}

@@ -552,6 +552,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         datos={datos}
         onChange={handleInputChange}
         columnasEditables={columnasEditables}
+        columnasColorear={columnasEditables}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}
