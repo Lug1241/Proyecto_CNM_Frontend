@@ -7,10 +7,10 @@ import "./Tabla.css";
 
 const Tabla = ({
   columnas, columnasAgrupadas, datos, onChange, columnasEditables = [],
+  columnasColorear = columnasEditables,
   mostrarEditar = true, mostrarGuardar = true, onEditar, onGuardar, onEliminar, inputsDisabled,
   isWithinRange, rangoTexto, globalEdit, forceEdit, clasePersonalizada = "", soloLectura, esPorSolicitud = false, esFilaDeshabilitada,
-  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow,
-  columnasColorear = [] }) => {
+  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow }) => {
   
   // Usar estado externo si existe, sino usar estado local
   const [localEditingRow, setLocalEditingRow] = useState(null);
@@ -35,6 +35,17 @@ const Tabla = ({
   const esNotaBaja = (col, fila) => {
     const columnasEvaluadas = ["PROMEDIO PARCIAL", "Promedio Final", "PROMEDIO", "Primer Parcial","Segundo Parcial","Promedio Quimestral"];
     return columnasEvaluadas.includes(col) && !isNaN(parseFloat(fila[col])) && parseFloat(fila[col]) < 7;
+  };
+
+  const obtenerEstiloColorCelda = (col, fila) => {
+    if (!columnasColorear.includes(col)) return null;
+
+    const valor = fila[col];
+    const tieneValor = valor !== null && valor !== undefined && `${valor}`.trim() !== "";
+
+    return tieneValor
+      ? { backgroundColor: "#bfe3c7", color: "#0b3d20" }
+      : { backgroundColor: "#f1c1c7", color: "#5f1320" };
   };
 
   return (
@@ -70,6 +81,7 @@ const Tabla = ({
             datos.map((fila, i) => (
               <tr key={i}>
                 {columnasFinales.map((col, j) => {
+                  const estiloColorCelda = obtenerEstiloColorCelda(col, fila);
                   if ((col === columnaFinal) && (mostrarEditar || mostrarGuardar)) {
                     if (soloLectura) return null;
                     return (
@@ -146,11 +158,12 @@ const Tabla = ({
                   } else {
                     // Renderizamos las celdas normales
                     const esEditable = columnasEditables.includes(col);
-                    const colorCelda = columnasColorear.includes(col)
-                      ? (fila[col] !== undefined && fila[col] !== null && fila[col] !== "" ? "#d4edda" : "#f8d7da")
-                      : undefined;
                     return (
-                      <td key={j} className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`} style={colorCelda ? { backgroundColor: colorCelda } : undefined}>
+                      <td
+                        key={j}
+                        className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`}
+                        style={estiloColorCelda || undefined}
+                      >
                         {/* Texto que solo se muestra en PDF */}
                         <span className="pdf-only">
                           {fila[col] !== undefined && fila[col] !== "" ? fila[col] : "-"}
