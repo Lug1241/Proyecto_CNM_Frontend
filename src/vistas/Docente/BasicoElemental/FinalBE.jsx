@@ -40,36 +40,91 @@ const FinalBE = ({ quim1Data, quim2Data, datosModulo, escala, inputsDisabled, on
 
   // Carga y combina datos de quimestres, sin examen supletorio
   useEffect(() => {
-    if (!datosModulo?.ID) return;
     const token = localStorage.getItem("token");
     if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    const urlInscripciones = `${import.meta.env.VITE_URL_DEL_BACKEND}/inscripcion/asignacion/${datosModulo.ID}`;
+    const esGrupoIndividual = datosModulo?.asignaciones && datosModulo.asignaciones.length > 0;
+    
+    if (esGrupoIndividual) {
+      // Caso individual: iterar sobre cada asignación
+      const promesasAsignaciones = datosModulo.asignaciones.map(asignacion => {
+        const urlInscripciones = `${import.meta.env.VITE_URL_DEL_BACKEND}/inscripcion/asignacion/${asignacion.ID}`;
+        return axios.get(urlInscripciones)
+          .then(resp => ({ asignacion, estudiantes: resp.data }));
+      });
 
-    axios.get(urlInscripciones)
-      .then(resp => {
-        const estudiantes = resp.data;
-        const combinados = estudiantes.map(est => {
-          const q1 = quim1Data.find(q => q.id_inscripcion === est.idInscripcion) || {};
-          const q2 = quim2Data.find(q => q.id_inscripcion === est.idInscripcion) || {};
-          const n1 = parseFloat(q1["Promedio Final"]) || 0;
-          const n2 = parseFloat(q2["Promedio Final"]) || 0;
-          const promedio = (n1 + n2) / 2;
-          const estado = promedio >= 7 ? "Aprobado" : "Reprobado";
-          return {
-            idInscripcion: est.idInscripcion,
-            Nro: est.nro,
-            "Nómina de Estudiantes": est.nombre,
-            "Primer Quimestre": n1.toFixed(2),
-            "Segundo Quimestre": n2.toFixed(2),
-            "Promedio Final": promedio.toFixed(2),
-            "Escala": convertirNota(promedio.toFixed(2)),
-            "Estado": estado
-          };
-        });
-        setDatos(combinados);
-      })
-      .catch(err => ErrorMessage(err));
+      Promise.all(promesasAsignaciones)
+        .then(resultados => {
+          let nroGlobal = 1;
+          const todosLosDatos = [];
+
+          resultados.forEach(({ asignacion, estudiantes }) => {
+            if (!estudiantes || estudiantes.length === 0) return;
+
+            estudiantes.forEach(est => {
+              const q1 = quim1Data.find(q => String(q.id_inscripcion) === String(est.idInscripcion)) || {};
+              const q2 = quim2Data.find(q => String(q.id_inscripcion) === String(est.idInscripcion)) || {};
+              const n1 = parseFloat(q1["Promedio Final"]) || 0;
+              const n2 = parseFloat(q2["Promedio Final"]) || 0;
+              const promedio = (n1 + n2) / 2;
+              const estado = promedio >= 7 ? "Aprobado" : "Reprobado";
+
+              todosLosDatos.push({
+                idInscripcion: est.idInscripcion,
+                Nro: nroGlobal++,
+                "Nómina de Estudiantes": est.nombre,
+                "Primer Quimestre": n1.toFixed(2),
+                "Segundo Quimestre": n2.toFixed(2),
+                "Promedio Final": promedio.toFixed(2),
+                "Escala": convertirNota(promedio.toFixed(2)),
+                "Estado": estado
+              });
+            });
+          });
+
+          // Ordenar alfabéticamente
+          todosLosDatos.sort((a, b) => a["Nómina de Estudiantes"].localeCompare(b["Nómina de Estudiantes"]));
+          // Reasignar números
+          todosLosDatos.forEach((fila, i) => { fila.Nro = i + 1; });
+
+          setDatos(todosLosDatos);
+        })
+        .catch(err => ErrorMessage(err));
+    } else if (datosModulo?.ID) {
+      // Caso grupal: usar ID directo
+      const urlInscripciones = `${import.meta.env.VITE_URL_DEL_BACKEND}/inscripcion/asignacion/${datosModulo.ID}`;
+
+      axios.get(urlInscripciones)
+        .then(resp => {
+          const estudiantes = resp.data;
+          
+          if (!estudiantes || estudiantes.length === 0) {
+            setDatos([]);
+            return;
+          }
+          
+          const combinados = estudiantes.map(est => {
+            const q1 = quim1Data.find(q => String(q.id_inscripcion) === String(est.idInscripcion)) || {};
+            const q2 = quim2Data.find(q => String(q.id_inscripcion) === String(est.idInscripcion)) || {};
+            const n1 = parseFloat(q1["Promedio Final"]) || 0;
+            const n2 = parseFloat(q2["Promedio Final"]) || 0;
+            const promedio = (n1 + n2) / 2;
+            const estado = promedio >= 7 ? "Aprobado" : "Reprobado";
+            return {
+              idInscripcion: est.idInscripcion,
+              Nro: est.nro,
+              "Nómina de Estudiantes": est.nombre,
+              "Primer Quimestre": n1.toFixed(2),
+              "Segundo Quimestre": n2.toFixed(2),
+              "Promedio Final": promedio.toFixed(2),
+              "Escala": convertirNota(promedio.toFixed(2)),
+              "Estado": estado
+            };
+          });
+          setDatos(combinados);
+        })
+        .catch(err => ErrorMessage(err));
+    }
   }, [datosModulo, quim1Data, quim2Data, escala]);
 
   // Header de la tabla

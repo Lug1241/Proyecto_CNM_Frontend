@@ -439,11 +439,62 @@ const QuimestralBE = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actua
 
   const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
     if (!rowData.idQuimestral) {
-      Swal.fire({
-        icon: "error",
-        title: "Registro no encontrado",
-        text: "No se puede actualizar porque aún no existe un registro para este estudiante.",
-      });
+      // Si no existe el registro, intentamos crearlo
+      // Validar que el examen esté completo
+      if (!rowData["Examen"] || rowData["Examen"] === "") {
+        Swal.fire({
+          icon: "warning",
+          title: "Faltan datos",
+          text: "Debes ingresar la nota del examen antes de guardar.",
+          confirmButtonText: "OK"
+        });
+        return;
+      }
+
+      const examen = parseFloat(rowData["Examen"]);
+      if (isNaN(examen) || examen < 0 || examen > 10) {
+        Swal.fire({
+          icon: "error",
+          title: "Valor inválido",
+          text: "La nota del examen debe estar entre 0.00 y 10.00.",
+        });
+        return;
+      }
+
+      const body = {
+        id_inscripcion: rowData.idInscripcion,
+        quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2",
+        examen,
+      };
+
+      axios
+        .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestralesbe`, body)
+        .then((response) => {
+          Swal.fire({
+            icon: "success",
+            title: "Creado",
+            text: "La nota del examen quimestral se guardó correctamente.",
+          });
+          // Actualizar el idQuimestral en la fila
+          const copia = [...datos];
+          copia[rowIndex] = {
+            ...rowData,
+            idQuimestral: response.data?.id || response.data?.insertId || null
+          };
+          setDatos(copia);
+          const copiaOriginal = [...datosOriginales];
+          copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
+          setDatosOriginales(copiaOriginal);
+          if (onSuccessCallback) onSuccessCallback();
+        })
+        .catch((error) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error al crear ❌.",
+            text: "No se pudo crear la nota del examen.",
+          });
+          ErrorMessage(error);
+        });
       return;
     }
 

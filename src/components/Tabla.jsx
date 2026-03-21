@@ -91,20 +91,7 @@ const Tabla = ({
                             <button
                               className="btn btn-sm btn-primary text-white"
                               onClick={() => {
-                                // Verificar si la fila tiene un registro guardado en la base de datos
-                                const tieneRegistroGuardado = fila.idParcial || fila.idQuimestral || fila.idFinal;
-                                
-                                if (!tieneRegistroGuardado) {
-                                  Swal.fire({
-                                    icon: "info",
-                                    title: "Sin registro guardado",
-                                    text: "Esta fila aún no tiene calificaciones guardadas. Usa el botón amarillo de edición global para ingresar nuevas calificaciones.",
-                                    confirmButtonText: "Entendido"
-                                  });
-                                  return;
-                                }
-                                
-                                // Permitir edición si está dentro del rango O si forceEdit está activo (solicitud aprobada)
+                                // Permitir edición siempre, aunque no haya registro guardado
                                 if (!isWithinRange && !forceEdit) {
                                   Swal.fire({
                                     icon: rangoTexto ? "warning" : "info",
@@ -117,8 +104,6 @@ const Tabla = ({
                                 }
                                 setEditingRow(i); // Habilita la edición para esta fila.
                                 if (onEditar) onEditar(i, fila);
-                                
-                                // Mostrar alerta de confirmación diferenciando si es por solicitud o por fechas normales
                                 Swal.fire({
                                   icon: "success",
                                   title: esPorSolicitud ? "Edición por solicitud aprobada" : "Edición habilitada",

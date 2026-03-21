@@ -299,15 +299,6 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
   };
 
   const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
-    if (!rowData.idQuimestral) {
-      Swal.fire({
-        icon: "error",
-        title: "Registro no encontrado",
-        text: "No se puede actualizar porque aún no existe un registro para este estudiante.",
-      });
-      return;
-    }
-
     // Validar que el examen esté completo
     if (!rowData["Examen"] || rowData["Examen"] === "") {
       Swal.fire({
@@ -315,18 +306,6 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
         title: "Faltan datos",
         text: "Debes ingresar la nota del examen antes de guardar.",
         confirmButtonText: "OK"
-      });
-      return;
-    }
-
-    const original = datosOriginales[rowIndex];
-    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
-
-    if (!haCambiado) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
       });
       return;
     }
@@ -346,6 +325,63 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
       quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2",
       examen,
     };
+
+    // Si no existe idQuimestral, crear el registro; si existe, actualizarlo
+    if (!rowData.idQuimestral) {
+      axios
+        .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales`, body)
+        .then((response) => {
+          Swal.fire({
+            icon: "success",
+            title: "Creado",
+            text: "La nota del examen quimestral se guardó correctamente.",
+          });
+          // Actualizar el idQuimestral en la fila
+          const nuevoIdQuimestral = response.data?.ID || response.data?.id || response.data?.insertId || null;
+          const copia = [...datos];
+          copia[rowIndex] = {
+            ...rowData,
+            idQuimestral: nuevoIdQuimestral
+          };
+          setDatos(copia);
+          const copiaOriginal = [...datosOriginales];
+          copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
+          setDatosOriginales(copiaOriginal);
+          
+          // Actualizar savedKeysQuim para bloquear la fila
+          if (agregarSavedKeyQuim && makeKeyQuim) {
+            const key = makeKeyQuim({
+              id_inscripcion: rowData.idInscripcion,
+              quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2"
+            });
+            agregarSavedKeyQuim(key);
+          }
+          
+          if (onSuccessCallback) onSuccessCallback();
+        })
+        .catch((error) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error al crear ❌.",
+            text: "No se pudo crear la nota del examen.",
+          });
+          ErrorMessage(error);
+        });
+      return;
+    }
+
+    // Si existe idQuimestral, actualizar el registro existente
+    const original = datosOriginales[rowIndex];
+    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
+
+    if (!haCambiado) {
+      Swal.fire({
+        icon: "info",
+        title: "Sin cambios",
+        text: "No has realizado ningún cambio en esta fila.",
+      });
+      return;
+    }
 
     axios
       .put(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales/${rowData.idQuimestral}`, body)
