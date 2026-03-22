@@ -7,6 +7,7 @@ import "./Tabla.css";
 
 const Tabla = ({
   columnas, columnasAgrupadas, datos, onChange, columnasEditables = [],
+  columnasColorear = columnasEditables,
   mostrarEditar = true, mostrarGuardar = true, onEditar, onGuardar, onEliminar, inputsDisabled,
   isWithinRange, rangoTexto, globalEdit, forceEdit, clasePersonalizada = "", soloLectura, esPorSolicitud = false, esFilaDeshabilitada,
   editingRow: externalEditingRow, setEditingRow: externalSetEditingRow }) => {
@@ -34,6 +35,17 @@ const Tabla = ({
   const esNotaBaja = (col, fila) => {
     const columnasEvaluadas = ["PROMEDIO PARCIAL", "Promedio Final", "PROMEDIO", "Primer Parcial","Segundo Parcial","Promedio Quimestral"];
     return columnasEvaluadas.includes(col) && !isNaN(parseFloat(fila[col])) && parseFloat(fila[col]) < 7;
+  };
+
+  const obtenerEstiloColorCelda = (col, fila) => {
+    if (!columnasColorear.includes(col)) return null;
+
+    const valor = fila[col];
+    const tieneValor = valor !== null && valor !== undefined && `${valor}`.trim() !== "";
+
+    return tieneValor
+      ? { backgroundColor: "#bfe3c7", color: "#0b3d20" }
+      : { backgroundColor: "#f1c1c7", color: "#5f1320" };
   };
 
   return (
@@ -69,6 +81,7 @@ const Tabla = ({
             datos.map((fila, i) => (
               <tr key={i}>
                 {columnasFinales.map((col, j) => {
+                  const estiloColorCelda = obtenerEstiloColorCelda(col, fila);
                   if ((col === columnaFinal) && (mostrarEditar || mostrarGuardar)) {
                     if (soloLectura) return null;
                     return (
@@ -78,20 +91,7 @@ const Tabla = ({
                             <button
                               className="btn btn-sm btn-primary text-white"
                               onClick={() => {
-                                // Verificar si la fila tiene un registro guardado en la base de datos
-                                const tieneRegistroGuardado = fila.idParcial || fila.idQuimestral || fila.idFinal;
-                                
-                                if (!tieneRegistroGuardado) {
-                                  Swal.fire({
-                                    icon: "info",
-                                    title: "Sin registro guardado",
-                                    text: "Esta fila aún no tiene calificaciones guardadas. Usa el botón amarillo de edición global para ingresar nuevas calificaciones.",
-                                    confirmButtonText: "Entendido"
-                                  });
-                                  return;
-                                }
-                                
-                                // Permitir edición si está dentro del rango O si forceEdit está activo (solicitud aprobada)
+                                // Permitir edición siempre, aunque no haya registro guardado
                                 if (!isWithinRange && !forceEdit) {
                                   Swal.fire({
                                     icon: rangoTexto ? "warning" : "info",
@@ -104,8 +104,6 @@ const Tabla = ({
                                 }
                                 setEditingRow(i); // Habilita la edición para esta fila.
                                 if (onEditar) onEditar(i, fila);
-                                
-                                // Mostrar alerta de confirmación diferenciando si es por solicitud o por fechas normales
                                 Swal.fire({
                                   icon: "success",
                                   title: esPorSolicitud ? "Edición por solicitud aprobada" : "Edición habilitada",
@@ -146,7 +144,11 @@ const Tabla = ({
                     // Renderizamos las celdas normales
                     const esEditable = columnasEditables.includes(col);
                     return (
-                      <td key={j} className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`}>
+                      <td
+                        key={j}
+                        className={`text-center ${esNotaBaja(col, fila) ? "text-danger-strong" : ""}`}
+                        style={estiloColorCelda || undefined}
+                      >
                         {/* Texto que solo se muestra en PDF */}
                         <span className="pdf-only">
                           {fila[col] !== undefined && fila[col] !== "" ? fila[col] : "-"}

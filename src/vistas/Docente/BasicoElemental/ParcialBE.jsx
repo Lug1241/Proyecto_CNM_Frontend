@@ -387,11 +387,66 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
 
   const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
     if (!rowData.idParcial) {
-      Swal.fire({
-        icon: "error",
-        title: "Registro no encontrado",
-        text: "No se puede actualizar porque aún no existe un registro para esta fila.",
-      });
+      // Si no existe el registro, intentamos crearlo
+      // Validar que todos los campos obligatorios estén completos (mejoramiento NO es obligatorio)
+      const camposVacios = [];
+      if (!rowData["INSUMO 1"] || rowData["INSUMO 1"] === "") camposVacios.push("Insumo 1");
+      if (!rowData["INSUMO 2"] || rowData["INSUMO 2"] === "") camposVacios.push("Insumo 2");
+      if (!rowData["EVALUACIÓN SUMATIVA"] || rowData["EVALUACIÓN SUMATIVA"] === "") camposVacios.push("Evaluación Sumativa");
+
+      if (camposVacios.length > 0) {
+        const listaCampos = camposVacios.length === 1 
+          ? camposVacios[0]
+          : camposVacios.length === 2
+          ? camposVacios.join(' y ')
+          : `${camposVacios.slice(0, -1).join(', ')} y ${camposVacios[camposVacios.length - 1]}`;
+        Swal.fire({
+          icon: "warning",
+          title: "Faltan datos",
+          text: `Debes completar: ${listaCampos}`,
+          confirmButtonText: "OK"
+        });
+        return;
+      }
+
+      const body = {
+        id_inscripcion: rowData.idInscripcion,
+        insumo1: parseFloat(rowData["INSUMO 1"]),
+        insumo2: parseFloat(rowData["INSUMO 2"]),
+        evaluacion: parseFloat(rowData["EVALUACIÓN SUMATIVA"]),
+        mejoramiento: parseFloat(rowData["EVALUACIÓN MEJORAMIENTO"]),
+        quimestre: obtenerEtiquetaQuimestre(),
+        parcial: obtenerEtiquetaParcial(),
+      };
+
+      axios
+        .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/parcialesbe`, body)
+        .then((response) => {
+          Swal.fire({
+            icon: "success",
+            title: "Creado",
+            text: "Las calificaciones se guardaron correctamente.",
+          });
+          // Actualizar el idParcial en la fila
+          const copia = [...datos];
+          copia[rowIndex] = {
+            ...rowData,
+            idParcial: response.data?.id || response.data?.insertId || null
+          };
+          setDatos(copia);
+          const copiaOriginal = [...datosOriginales];
+          copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
+          setDatosOriginales(copiaOriginal);
+          if (onSuccessCallback) onSuccessCallback();
+        })
+        .catch((error) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error al crear ❌.",
+            text: "No se pudo crear la calificación.",
+          });
+          ErrorMessage(error);
+        });
       return;
     }
 
@@ -570,6 +625,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
         datos={datos}
         onChange={handleInputChange}
         columnasEditables={columnasEditables}
+        columnasColorear={columnasEditables}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}

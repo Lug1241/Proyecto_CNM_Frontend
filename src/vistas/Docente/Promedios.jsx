@@ -60,15 +60,14 @@ export function calcularPromedioComportamientoFinal(c1, c2) {
 
 export function calcularPromedioFinalConSupletorio(promAnual, examenSupletorio) {
   if (promAnual < 7 && examenSupletorio !== "") {
-    const examen = parseFloat(examenSupletorio) || 0;
-    return examen > promAnual ? examen : promAnual;
+    return parseFloat(examenSupletorio) || 0;
   }
   return promAnual;
 }
 
-export function determinarEstado(promFinal) {
+export function determinarEstado(promFinal, supletorioRendido = false) {
   if (promFinal >= 7) return "Aprobado";
-  if (promFinal >= 4) return "Supletorio";
+  if (!supletorioRendido && promFinal >= 4) return "Supletorio";
   return "Reprobado";
 }
 

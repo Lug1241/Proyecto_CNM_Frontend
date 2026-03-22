@@ -77,13 +77,13 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
               const promedioComportamiento = calcularPromedioComportamientoFinal(q1PC, q2PC);
               const comportamiento = calcularValoracionComportamiento(promedioComportamiento);
 
-              const examenSupletorio = finalGuardado.examen_recuperacion ?? "";
+              const examenSupletorio = finalGuardado.examenRecuperacion ?? finalGuardado.examen_recuperacion ?? "";
               const pFinal = calcularPromedioFinalConSupletorio(promedioAnual, examenSupletorio);
-              const estado = determinarEstado(pFinal);
+              const estado = determinarEstado(pFinal, examenSupletorio !== "");
 
               todosLosDatos.push({
                 idInscripcion: est.idInscripcion,
-                idFinal: finalGuardado.id,
+                idFinal: finalGuardado.idFinal ?? finalGuardado.id,
                 idAsignacion: asignacion.ID,
                 _primerQuimestre: q1PF,
                 _segundoQuimestre: q2PF,
@@ -142,13 +142,13 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
             const promedioComportamiento = calcularPromedioComportamientoFinal(q1PC, q2PC);
             const comportamiento = calcularValoracionComportamiento(promedioComportamiento);
 
-            const examenSupletorio = finalGuardado.examen_recuperacion ?? "";
+            const examenSupletorio = finalGuardado.examenRecuperacion ?? finalGuardado.examen_recuperacion ?? "";
             const pFinal = calcularPromedioFinalConSupletorio(promedioAnual, examenSupletorio);
-            const estado = determinarEstado(pFinal);
+            const estado = determinarEstado(pFinal, examenSupletorio !== "");
 
             return {
               idInscripcion: est.idInscripcion,
-              idFinal: finalGuardado.id,
+              idFinal: finalGuardado.idFinal ?? finalGuardado.id,
               _primerQuimestre: q1PF,
               _segundoQuimestre: q2PF,
               _promedioAnual: promedioAnual,
@@ -203,16 +203,16 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         return;
       }
 
-      // C) Validar que sea un número de 0.00 a 7.00
+      // C) Validar que sea un número de 0.00 a 10.00
       const regexDecimal = /^\d{1,2}(\.\d{0,2})?$/;
       if (value !== "") {
         const esNumeroValido = regexDecimal.test(value.trim());
         const valorNumerico = parseFloat(value);
-        if (!esNumeroValido || isNaN(valorNumerico) || valorNumerico < 0 || valorNumerico > 7) {
+        if (!esNumeroValido || isNaN(valorNumerico) || valorNumerico < 0 || valorNumerico > 10) {
           Swal.fire({
             icon: 'error',
             title: 'Error de Validación',
-            text: 'El valor debe estar entre 0.00 y 7.00 con máximo dos decimales.',
+            text: 'El valor debe estar entre 0.00 y 10.00 con máximo dos decimales.',
             confirmButtonColor: '#3085d6',
           });
           return;
@@ -230,7 +230,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
             const pFinal = calcularPromedioFinalConSupletorio(pAnualNum, value);
             newRow._promedioFinal = pFinal;
             newRow["Promedio Final"] = pFinal;
-            newRow["Estado"] = determinarEstado(pFinal);
+            newRow["Estado"] = determinarEstado(pFinal, value !== "");
 
           }
           return newRow;
@@ -339,15 +339,6 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
   };
 
   const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
-    if (!rowData.idFinal) {
-      Swal.fire({
-        icon: "error",
-        title: "Registro no encontrado",
-        text: "No se puede actualizar porque aún no existe un registro para este estudiante.",
-      });
-      return;
-    }
-    
     // Validar que el examen supletorio tenga valor si es necesario
     const promedioAnual = parseFloat(rowData._promedioAnual);
     if (promedioAnual < 7 && (!rowData["Examen Supletorio"] || rowData["Examen Supletorio"] === "")) {
@@ -375,11 +366,11 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
     }
 
     const examen = parseFloat(rowData["Examen Supletorio"]);
-    if (isNaN(examen) || examen < 0 || examen > 7) {
+    if (isNaN(examen) || examen < 0 || examen > 10) {
       Swal.fire({
         icon: "error",
         title: "Valor inválido",
-        text: "La nota del examen supletorio debe estar entre 0.00 y 7.00.",
+        text: "La nota del examen supletorio debe estar entre 0.00 y 10.00.",
       });
       return;
     }
@@ -389,22 +380,39 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
       examen_recuperacion: examen,
     };
 
-    axios
-      .put(`${import.meta.env.VITE_URL_DEL_BACKEND}/finales/${rowData.idFinal}`, body)
-      .then(() => {
+    // Si no existe idFinal, crear el registro; si existe, actualizarlo
+    const url = rowData.idFinal
+      ? `${import.meta.env.VITE_URL_DEL_BACKEND}/finales/${rowData.idFinal}`
+      : `${import.meta.env.VITE_URL_DEL_BACKEND}/finales`;
+    
+    const axiosRequest = rowData.idFinal
+      ? axios.put(url, body)
+      : axios.post(url, body);
+
+    axiosRequest
+      .then((response) => {
+        const isCreate = !rowData.idFinal;
         Swal.fire({
           icon: "success",
-          title: "Actualizado",
-          text: "La nota del examen supletorio se actualizó correctamente.",
+          title: isCreate ? "Creado" : "Actualizado",
+          text: isCreate 
+            ? "La nota del examen supletorio se creó correctamente."
+            : "La nota del examen supletorio se actualizó correctamente.",
         });
 
         // 👉 Recalcular estado y promedio
         const promedioFinalRecalculado = calcularPromedioFinalConSupletorio(rowData._promedioAnual, examen);
-        const estadoFinal = determinarEstado(promedioFinalRecalculado);
+        const estadoFinal = determinarEstado(promedioFinalRecalculado, true);
+
+        // Obtener el idFinal (nuevo si se creó, mismo si se actualizó)
+        const nuevoIdFinal = isCreate 
+          ? (response.data?.ID || response.data?.id || rowData.idFinal) 
+          : rowData.idFinal;
 
         const nuevaCopia = [...datos];
         nuevaCopia[rowIndex] = {
           ...rowData,
+          idFinal: nuevoIdFinal,
           "Examen Supletorio": examen.toFixed(2),
           _promedioFinal: promedioFinalRecalculado,
           "Promedio Final": promedioFinalRecalculado.toFixed(2),
@@ -415,6 +423,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         const nuevosOriginales = [...datosOriginales];
         nuevosOriginales[rowIndex] = {
           ...rowData,
+          idFinal: nuevoIdFinal,
           "Examen Supletorio": examen.toFixed(2),
           _promedioFinal: promedioFinalRecalculado,
           "Promedio Final": promedioFinalRecalculado.toFixed(2),
@@ -435,7 +444,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         if (onSuccessCallback) onSuccessCallback();
       })
       .catch((error) => {
-        let mensajeError = "No se pudo actualizar el examen supletorio.";
+        let mensajeError = "No se pudo guardar el examen supletorio.";
         
         if (error.response) {
           // El servidor respondió con un código de error
@@ -454,7 +463,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         
         Swal.fire({
           icon: "error",
-          title: "Error al actualizar ❌",
+          title: "Error al guardar ❌",
           text: mensajeError,
         });
         ErrorMessage(error);
@@ -545,6 +554,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         onChange={handleInputChange}
         // Sólo la columna "Examen Supletorio" es editable
         columnasEditables={["Examen Supletorio"]}
+        columnasColorear={["Examen Supletorio"]}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}

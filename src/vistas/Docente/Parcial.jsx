@@ -363,15 +363,6 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
   }, [datosModulo, quimestreSeleccionado, parcialSeleccionado]);
 
   const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
-    if (!rowData.idParcial) {
-      Swal.fire({
-        icon: "error",
-        title: "Registro no encontrado",
-        text: "No se puede actualizar porque aún no existe un registro para esta fila.",
-      });
-      return;
-    }
-
     // Validar que todos los campos obligatorios estén completos
     const camposVacios = [];
     if (!rowData["INSUMO 1"] || rowData["INSUMO 1"] === "") camposVacios.push("Insumo 1");
@@ -396,18 +387,6 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
       return;
     }
 
-    const original = datosOriginales[rowIndex];
-    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
-
-    if (!haCambiado) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
-      });
-      return;
-    }
-
     const comportamiento = columnasComportamiento.map((col) =>
       parseInt(rowData[col]) || 0
     );
@@ -421,6 +400,64 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
       quimestre: obtenerEtiquetaQuimestre(),
       parcial: obtenerEtiquetaParcial(),
     };
+
+    // Si no existe idParcial, crear el registro; si existe, actualizarlo
+    if (!rowData.idParcial) {
+      axios
+        .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/parciales`, body)
+        .then((response) => {
+          Swal.fire({
+            icon: "success",
+            title: "Creado",
+            text: "Las calificaciones se guardaron correctamente.",
+          });
+          // Actualizar el idParcial en la fila
+          const nuevoIdParcial = response.data?.ID || response.data?.id || response.data?.insertId || null;
+          const copia = [...datos];
+          copia[rowIndex] = {
+            ...rowData,
+            idParcial: nuevoIdParcial
+          };
+          setDatos(copia);
+          const copiaOriginal = [...datosOriginales];
+          copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
+          setDatosOriginales(copiaOriginal);
+          
+          // Actualizar savedKeys para bloquear la fila
+          if (agregarSavedKey && makeKey) {
+            const key = makeKey({
+              id_inscripcion: rowData.idInscripcion,
+              quimestre: obtenerEtiquetaQuimestre(),
+              parcial: obtenerEtiquetaParcial()
+            });
+            agregarSavedKey(key);
+          }
+          
+          if (onSuccessCallback) onSuccessCallback();
+        })
+        .catch((error) => {
+          Swal.fire({
+            icon: "error",
+            title: "Error al crear ❌.",
+            text: "No se pudo crear la calificación.",
+          });
+          ErrorMessage(error);
+        });
+      return;
+    }
+
+    // Si existe idParcial, actualizar el registro existente
+    const original = datosOriginales[rowIndex];
+    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
+
+    if (!haCambiado) {
+      Swal.fire({
+        icon: "info",
+        title: "Sin cambios",
+        text: "No has realizado ningún cambio en esta fila.",
+      });
+      return;
+    }
 
     axios
       .put(`${import.meta.env.VITE_URL_DEL_BACKEND}/parciales/${rowData.idParcial}`, body)
@@ -552,6 +589,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         datos={datos}
         onChange={handleInputChange}
         columnasEditables={columnasEditables}
+        columnasColorear={columnasEditables}
         inputsDisabled={inputsDisabled}
         onEditar={onEditar}
         onGuardar={handleGuardar}

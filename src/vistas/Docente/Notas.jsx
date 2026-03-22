@@ -7,7 +7,7 @@ import Final from "./Final";
 import Header from "../../components/Header";
 import Layout from "../../layout/Layout";
 
-function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleExportPDF, handleSave, handleEditar,
+function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleExportPDF,
   forceEdit, inputsDisabled, estadoFechas, textoRangoFechas, activeMainTab, activeSubTabQuim1, activeSubTabQuim2, setActiveMainTab,
   setActiveSubTabQuim1, setActiveSubTabQuim2, parcial1Quim1Data, parcial2Quim1Data, parcial1Quim2Data, parcial2Quim2Data, quim1Data,
   quim2Data, finalData, handleActualizarParcial1Quim1, handleActualizarParcial2Quim1, handleActualizarParcial1Quim2, handleActualizarParcial2Quim2,
@@ -68,20 +68,6 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                 <h2 className="mb-0">Gestión de Calificaciones</h2>
               </div>
 
-              {/* Línea de Acciones (solo para no-secretaria) */}
-              {!soloLectura && (
-                <div className="d-flex justify-content-end mt-2">
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="label-text">Acciones:</span>
-                    <button className="btn btn-secondary btn-sm" title="Guardar" onClick={handleSave}>
-                      <i className="bi bi-save"></i>
-                    </button>
-                    <button className="btn btn-warning btn-sm text-white" title="Habilitar edición" onClick={handleEditar}>
-                      <i className="bi bi-pencil-square"></i>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
             {/* TABS PRINCIPALES */}
             <Tabs activeKey={activeMainTab} id="calificaciones-tabs" className="mb-3" fill onSelect={(k) => setActiveMainTab(k)}>
