@@ -23,6 +23,14 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
         }
     };
     
+    // Función para obtener el horario correcto por día
+    const getHorarioPorDia = (asignacion, dia) => {
+        if (asignacion.Asignacion?.rangoPorDia && asignacion.Asignacion.rangoPorDia[dia]) {
+            return asignacion.Asignacion.rangoPorDia[dia];
+        }
+        return { horaInicio: asignacion.horaInicio, horaFin: asignacion.horaFin };
+    };
+
     // Función para organizar las asignaciones por día de la semana
     const organizarPorDias = () => {
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
@@ -71,8 +79,10 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
                         {Object.entries(horarioOrganizado).map(([dia, asignacionesDia]) => 
                             asignacionesDia.length > 0 ? (
                                 asignacionesDia
-                                    .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
-                                    .map((asignacion, index) => (
+                                    .sort((a, b) => getHorarioPorDia(a, dia).horaInicio.localeCompare(getHorarioPorDia(b, dia).horaInicio))
+                                    .map((asignacion, index) => {
+                                        const horarioDia = getHorarioPorDia(asignacion, dia);
+                                        return (
                                     <tr key={`${dia}-${index}`}>
                                         <td className="celda-horarios dia-semana">{dia}</td>
                                         <td className="celda-horarios">{asignacion.Materia?.nombre || 'Sin materia'}</td>
@@ -82,7 +92,7 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
                                                 : 'Sin docente'
                                             }
                                         </td>
-                                        <td className="celda-horarios">{asignacion.horaInicio} - {asignacion.horaFin}</td>
+                                        <td className="celda-horarios">{horarioDia.horaInicio} - {horarioDia.horaFin}</td>
                                         <td className="celda-horarios">{asignacion.paralelo}</td>
                                         <td className="celda-horarios">
                                             <i 
@@ -92,7 +102,7 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
                                             ></i>
                                         </td>
                                     </tr>
-                                ))
+                                )})
                             ) : null
                         )}
                     </tbody>
@@ -109,8 +119,10 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
                             <div className="dia-contenido">
                                 {asignacionesDia.length > 0 ? (
                                     asignacionesDia
-                                        .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
-                                        .map((asignacion, index) => (
+                                        .sort((a, b) => getHorarioPorDia(a, dia).horaInicio.localeCompare(getHorarioPorDia(b, dia).horaInicio))
+                                        .map((asignacion, index) => {
+                                            const horarioDia = getHorarioPorDia(asignacion, dia);
+                                            return (
                                         <div key={index} className="clase-item">
                                             <span className="materia-nombre">{asignacion.Materia?.nombre}</span>
                                             <span className="docente-nombre">
@@ -119,9 +131,9 @@ function Horarios({asignaciones, onRetirarInscripcion}) {
                                                     : 'Sin docente'
                                                 }
                                             </span>
-                                            <span className="horario-time">{asignacion.horaInicio} - {asignacion.horaFin}</span>
+                                            <span className="horario-time">{horarioDia.horaInicio} - {horarioDia.horaFin}</span>
                                         </div>
-                                    ))
+                                    )})
                                 ) : (
                                     <span className="sin-clases-texto">Sin clases</span>
                                 )}
