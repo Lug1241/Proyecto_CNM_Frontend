@@ -5,6 +5,9 @@ import { ErrorMessage } from '../../../../../Utils/ErrorMesaje'
 import Paginación from '../../../Components/Paginación'
 import Loading from '../../../../../components/Loading'
 import Swal from 'sweetalert2'
+import Boton from '../../../../../components/Boton'
+import SelectorHoraMinuto from '../../Configuration/Cursos/SelectorHoraMinuto'
+import AutoCompleteInput from '../../Configuration/Cursos/AutoCompleteInput'
 
 function MateriasIndividuales() {
     const [periodo, setPeriodo] = useState("")
@@ -19,6 +22,21 @@ function MateriasIndividuales() {
     const token = localStorage.getItem("token")
     const [search, setSearch] = useState('')
     const [width, setWidth] = useState(window.innerWidth);
+    
+    const [isEditing, setIsEditing] = useState(false)
+    const [inscripcionEditando, setInscripcionEditando] = useState(null)
+    const [editForm, setEditForm] = useState({
+        docente: null,
+        materia: null,
+        dia1: '',
+        dia2: '',
+        horaInicio: '',
+        horaFin: '',
+        hora1: '',
+        hora2: ''
+    })
+    const [docentes, setDocentes] = useState([])
+    const [materiasIndividuales, setMateriasIndividuales] = useState([])
     // ✅ Detectar cambio de tamaño de pantalla
     useEffect(() => {
         const handleResize = () => setWidth(window.innerWidth);
@@ -44,6 +62,30 @@ function MateriasIndividuales() {
                 ErrorMessage(err)
             })
     }, [])
+
+    useEffect(() => {
+        axios.get(`${API_URL}/docente/obtener`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(res => {
+                setDocentes(res.data.data || res.data)
+            })
+            .catch(err => {
+                ErrorMessage(err)
+            })
+    }, [])
+
+    useEffect(() => {
+        axios.get(`${API_URL}/materia/individual`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(res => {
+                setMateriasIndividuales(res.data)
+            })
+            .catch(err => {
+                ErrorMessage(err)
+            })
+    }, [])
     useEffect(() => {
         if (periodo && nivel) {
 
@@ -52,7 +94,6 @@ function MateriasIndividuales() {
             })
                 .then(res => {
                     setInscripciones(res.data.data);
-                    console.log("esto llego de base", res)
                     setTotalPages(res.data.totalPages);
                     setLoading(false)
                 })
@@ -117,6 +158,101 @@ function MateriasIndividuales() {
         });
 
     }
+
+    const handleEdit = (inscripcion) => {
+        const asignacion = inscripcion.Asignacion
+        const dias = asignacion.dias || []
+        
+        const docenteObj = docentes.find(d => d.nroCedula === asignacion.nroCedula_docente)
+        const materiaObj = materiasIndividuales.find(m => m.ID === asignacion.ID_materia)
+        
+        setEditForm({
+            docente: docenteObj || { nroCedula: asignacion.nroCedula_docente, primer_nombre: inscripcion.Asignacion.Docente?.primer_nombre, primer_apellido: inscripcion.Asignacion.Docente?.primer_apellido },
+            materia: materiaObj || asignacion.Materia,
+            dia1: dias[0] || '',
+            dia2: dias[1] || '',
+            horaInicio: asignacion.horaInicio || '',
+            horaFin: asignacion.horaFin || '',
+            hora1: asignacion.hora1 || '',
+            hora2: asignacion.hora2 || ''
+        })
+        setInscripcionEditando(inscripcion)
+        setIsEditing(true)
+    }
+
+    const handleUpdate = async () => {
+        try {
+            if (!periodo) {
+                throw new Error("No se ha seleccionado un periodo")
+            }
+            if (!editForm.docente) {
+                throw new Error("Debe seleccionar un docente")
+            }
+            if (!editForm.materia) {
+                throw new Error("Debe seleccionar una materia")
+            }
+            
+            let dias = []
+            if (editForm.dia1 && editForm.dia2) {
+                if (editForm.dia1 === editForm.dia2) {
+                    throw new Error("Los días deben ser diferentes")
+                }
+                dias = [editForm.dia1, editForm.dia2]
+            } else if (editForm.dia1) {
+                dias = [editForm.dia1]
+            } else if (editForm.dia2) {
+                dias = [editForm.dia2]
+            }
+
+            const dataUpdate = {
+                horaInicio: editForm.horaInicio,
+                horaFin: editForm.horaFin,
+                hora1: editForm.hora1 || null,
+                hora2: editForm.hora2 || null,
+                dias: dias,
+                nroCedula_docente: editForm.docente.nroCedula,
+                ID_materia: editForm.materia.ID,
+                ID_periodo_academico: Number(periodo)
+            }
+
+            await axios.put(`${API_URL}/asignacion/editar/${inscripcionEditando.Asignacion.ID}`, dataUpdate, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+
+            setInscripciones(prevData =>
+                prevData.map(item => {
+                    if (item.ID === inscripcionEditando.ID) {
+                        return {
+                            ...item,
+                            Asignacion: {
+                                ...item.Asignacion,
+                                ...dataUpdate,
+                                Materia: editForm.materia,
+                                Docente: editForm.docente
+                            }
+                        }
+                    }
+                    return item
+                })
+            )
+
+            setIsEditing(false)
+            setInscripcionEditando(null)
+
+            Swal.fire({
+                icon: "success",
+                title: "Actualizado!",
+                text: `La inscripción ha sido actualizada.`,
+                iconColor: "#218838",
+                confirmButtonText: "Entendido",
+                confirmButtonColor: "#003F89",
+            })
+
+        } catch (error) {
+            ErrorMessage(error)
+        }
+    }
+
     return (
         <div className='Contenedor-general'>
             {!periodo && (
@@ -179,11 +315,124 @@ function MateriasIndividuales() {
             {loading ? <Loading /> : <TablaInscripciones
                 inscripciones={filteredData}
                 OnDelete={handleDelete}
-                headers={Headers}
+                OnEdit={handleEdit}
 
             />
             }
             {Paginación && filteredData.length > 0 && <Paginación totalPages={totalPages} page={page} setPage={setPage} />}
+
+            {isEditing && (
+                <div className="modal-overlay">
+                    <div className='modal-container'>
+                        <h2 className='modal-title'>Editar Curso Individual</h2>
+                        <div className="modal-form">
+                            <div className='rows'>
+                                <div className="form-group">
+                                    <label><strong>Estudiante:</strong> {inscripcionEditando?.Matricula?.Estudiante?.primer_nombre} {inscripcionEditando?.Matricula?.Estudiante?.primer_apellido}</label>
+                                </div>
+                            </div>
+                            <div className='rows'>
+                                <div className="form-group">
+                                    <label htmlFor="editDocente">Docente:</label>
+                                    <AutoCompleteInput 
+                                        inputValue={editForm.docente} 
+                                        setInputValue={(val) => setEditForm({...editForm, docente: val})} 
+                                        opciones={docentes} 
+                                        key1="primer_nombre" 
+                                        key2="primer_apellido"
+                                        placeholder="Seleccione docente"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="editMateria">Materia:</label>
+                                    <AutoCompleteInput 
+                                        inputValue={editForm.materia} 
+                                        setInputValue={(val) => setEditForm({...editForm, materia: val})} 
+                                        opciones={materiasIndividuales} 
+                                        key1="nombre" 
+                                        key2="nivel"
+                                        placeholder="Seleccione materia"
+                                    />
+                                </div>
+                            </div>
+                            <div className='rows'>
+                                <div className="form-group">
+                                    <label htmlFor="editDia1">Día 1:</label>
+                                    <select 
+                                        id="editDia1" 
+                                        value={editForm.dia1} 
+                                        onChange={(e) => setEditForm({...editForm, dia1: e.target.value})}
+                                    >
+                                        <option value="">Selecciona un día</option>
+                                        <option value="Lunes">Lunes</option>
+                                        <option value="Martes">Martes</option>
+                                        <option value="Miércoles">Miércoles</option>
+                                        <option value="Jueves">Jueves</option>
+                                        <option value="Viernes">Viernes</option>
+                                    </select>
+                                </div>
+                                <div className='form-group'>
+                                    <label>Horario inicio:</label>
+                                    <SelectorHoraMinuto
+                                        value={editForm.horaInicio}
+                                        onChange={(e) => setEditForm({...editForm, horaInicio: e.target.value})}
+                                        min="07:00"
+                                        max="19:00"
+                                    />
+                                </div>
+                                <div className='form-group'>
+                                    <label>Horario fin:</label>
+                                    <SelectorHoraMinuto
+                                        value={editForm.horaFin}
+                                        onChange={(e) => setEditForm({...editForm, horaFin: e.target.value})}
+                                        min="07:00"
+                                        max="19:00"
+                                    />
+                                </div>
+                            </div>
+                            <div className='rows'>
+                                <div className="form-group">
+                                    <label htmlFor="editDia2">Día 2:</label>
+                                    <select 
+                                        id="editDia2" 
+                                        value={editForm.dia2} 
+                                        onChange={(e) => setEditForm({...editForm, dia2: e.target.value})}
+                                    >
+                                        <option value="">Selecciona un día</option>
+                                        <option value="Lunes">Lunes</option>
+                                        <option value="Martes">Martes</option>
+                                        <option value="Miércoles">Miércoles</option>
+                                        <option value="Jueves">Jueves</option>
+                                        <option value="Viernes">Viernes</option>
+                                    </select>
+                                </div>
+                                <div className='form-group'>
+                                    <label>Horario inicio:</label>
+                                    <SelectorHoraMinuto
+                                        value={editForm.hora1}
+                                        onChange={(e) => setEditForm({...editForm, hora1: e.target.value})}
+                                        min="07:00"
+                                        max="19:00"
+                                    />
+                                </div>
+                                <div className='form-group'>
+                                    <label>Horario fin:</label>
+                                    <SelectorHoraMinuto
+                                        value={editForm.hora2}
+                                        onChange={(e) => setEditForm({...editForm, hora2: e.target.value})}
+                                        min="07:00"
+                                        max="19:00"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="botones">
+                            <Boton texto="Guardar" onClick={handleUpdate} estilo="boton-crear" />
+                            <Boton texto="Cancelar" onClick={() => setIsEditing(false)} estilo="boton-cancelar" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
