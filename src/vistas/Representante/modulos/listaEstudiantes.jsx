@@ -280,6 +280,14 @@ function ListaEstudiantes() {
                   <div className="resumen-semanal-estudiante">
                     <div className="grid-dias">
                       {(() => {
+                        // Función para obtener el horario correcto por día
+                        const getHorarioPorDia = (asignacion, dia) => {
+                          if (asignacion.rangoPorDia && asignacion.rangoPorDia[dia]) {
+                            return asignacion.rangoPorDia[dia];
+                          }
+                          return { horaInicio: asignacion.horaInicio, horaFin: asignacion.horaFin };
+                        };
+
                         // Organizar asignaciones por día
                         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
                         const horarioPorDia = {};
@@ -304,19 +312,21 @@ function ListaEstudiantes() {
                             <div className="dia-contenido">
                               {asignacionesDia.length > 0 ? (
                                 asignacionesDia
-                                  .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
-                                  .map((asignacion, index) => (
-                                  <div key={index} className="clase-item">
-                                    <span className="materia-nombre">{asignacion.Materia?.nombre}</span>
-                                    <span className="docente-nombre">
-                                      {asignacion.Docente ? 
-                                        `${asignacion.Docente.primer_nombre} ${asignacion.Docente.primer_apellido}` 
-                                        : 'Sin docente'
-                                      }
-                                    </span>
-                                    <span className="horario-time">{asignacion.horaInicio} - {asignacion.horaFin}</span>
-                                  </div>
-                                ))
+                                  .sort((a, b) => getHorarioPorDia(a, dia).horaInicio.localeCompare(getHorarioPorDia(b, dia).horaInicio))
+                                  .map((asignacion, index) => {
+                                    const horarioDia = getHorarioPorDia(asignacion, dia);
+                                    return (
+                                    <div key={index} className="clase-item">
+                                      <span className="materia-nombre">{asignacion.Materia?.nombre}</span>
+                                      <span className="docente-nombre">
+                                        {asignacion.Docente ? 
+                                          `${asignacion.Docente.primer_nombre} ${asignacion.Docente.primer_apellido}` 
+                                          : 'Sin docente'
+                                        }
+                                      </span>
+                                      <span className="horario-time">{horarioDia.horaInicio} - {horarioDia.horaFin}</span>
+                                    </div>
+                                  )})
                               ) : (
                                 <span className="sin-clases-texto">Sin clases</span>
                               )}
