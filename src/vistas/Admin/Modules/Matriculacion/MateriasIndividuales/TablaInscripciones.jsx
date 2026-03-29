@@ -1,7 +1,6 @@
 import React from 'react'
-import { FaTrash } from 'react-icons/fa'; // Importar íconos
-function TablaInscripciones({inscripciones,OnDelete}) {
-    console.log("estas son las inscripciones en tabla",inscripciones)
+import { FaTrash, FaEdit } from 'react-icons/fa';
+function TablaInscripciones({inscripciones,OnDelete,OnEdit}) {
   return (
     <div className="Contenedor-tabla">
                     {inscripciones.length === 0 ? (
@@ -34,6 +33,11 @@ function TablaInscripciones({inscripciones,OnDelete}) {
                                                 : "-"}
                                         </td>
                                         <td className='botones-icon'>
+                                            <FaEdit
+                                                size={20}
+                                                className="icon edit-icon"
+                                                onClick={()=>OnEdit(item)}
+                                            />
                                             <FaTrash
                                                 size={20}
                                                 className="icon delete-icon"
@@ -46,9 +50,6 @@ function TablaInscripciones({inscripciones,OnDelete}) {
                         </table>
     
                     )}
-    
-    
-    
                 </div>
   )
 }

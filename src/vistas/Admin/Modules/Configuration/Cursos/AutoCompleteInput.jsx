@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import '../../../Styles/AutoCompleteInput.css'
-const AutoCompleteInput = ({ opciones, inputValue, setInputValue, key1, key2 }) => {
+const AutoCompleteInput = ({ opciones, inputValue, setInputValue, key1, key2, placeholder = "Escribe algo..." }) => {
   const [filteredOptions, setFilteredOptions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [input,setInput]=useState("")
@@ -22,15 +22,13 @@ const AutoCompleteInput = ({ opciones, inputValue, setInputValue, key1, key2 }) 
       setShowSuggestions(false);
       return;
     }
-    console.log("opciones", opciones)
     // Filtramos todas las opciones cada vez que el usuario escribe
     const matches = opciones.filter((opcion) =>
       `${opcion[key1]} ${opcion[key2]}`
         .toLowerCase()
         .includes(value.toLowerCase())
     );
-    console.log("matches", matches)
-    setFilteredOptions(matches); // opcional: limitar a 20 resultados
+    setFilteredOptions(matches);
     setShowSuggestions(matches.length > 0);
   };
 
@@ -64,7 +62,7 @@ const AutoCompleteInput = ({ opciones, inputValue, setInputValue, key1, key2 }) 
         type="text"
         value={input}
         onChange={handleInputChange}
-        placeholder="Escribe algo..."
+        placeholder={placeholder}
         className="autocomplete-input"
       />
       {showSuggestions && (
