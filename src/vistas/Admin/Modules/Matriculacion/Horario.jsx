@@ -7,7 +7,7 @@ import '../../Styles/Horario.css'
 
 const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
-const Horario = ({ materiasSeleccionadas, setMateriasSeleccionadas, jornada, nivel }) => {
+const Horario = ({ materiasSeleccionadas, setMateriasSeleccionadas, jornada, nivel, setAsignaciones }) => {
 
     const API_URL = import.meta.env.VITE_URL_DEL_BACKEND;
     const token = localStorage.getItem("token")
@@ -64,7 +64,15 @@ const Horario = ({ materiasSeleccionadas, setMateriasSeleccionadas, jornada, niv
                 axios.delete(`${API_URL}/inscripcion/eliminar/${inscripcion.ID}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 }).then(() => {
-                    console.log("este no tiene ID", inscripcion.Asignacion)
+                    if (setAsignaciones) {
+                        setAsignaciones((prevData) =>
+                            prevData.map((item) =>
+                                item.ID === inscripcion.Asignacion.ID
+                                    ? { ...item, cupos: item.cupos + 1 }
+                                    : item
+                            )
+                        );
+                    }
 
                     setMateriasSeleccionadas((prevData) =>
                         prevData.filter((d) => d.Asignacion && d.Asignacion.ID !== inscripcion.Asignacion.ID)
