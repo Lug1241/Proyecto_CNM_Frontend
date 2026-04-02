@@ -48,6 +48,25 @@
     background-color: #2e7d32;
 }
 
+/* Botón Volver */
+.btn-volver {
+    width: auto;
+    background-color: #003F89;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+    margin-bottom: 15px;
+}
+
+.btn-volver:hover {
+    background-color: #5a6268;
+}
+
 /* 4. ÁREA DE CARDS (Sin scroll interno, fluye natural) */
 .gcd-cards-area {
     max-height: 22vh; /* O usa 25vh si prefieres porcentaje */

@@ -8,7 +8,7 @@ import SelectorHoraMinuto from '../../Admin/Modules/Configuration/Cursos/Selecto
 
 
 
-function CrearCursoIndividual({ onCancel, onSave, periodo,docente }) {
+function CrearCursoIndividual({ onCancel, onSave, periodo, docente, modoEdicion = false, datosIniciales = null }) {
   const [asignatura, setAsignatura] = useState("");
   const [asignaturas, setAsignaturas] = useState([])
   const [dia1, setDia1] = useState("")
@@ -19,21 +19,29 @@ function CrearCursoIndividual({ onCancel, onSave, periodo,docente }) {
   const [hora2, setHora2] = useState(null)
   const API_URL = import.meta.env.VITE_URL_DEL_BACKEND;
   const token=localStorage.getItem("token")
+  
   useEffect(() => {
-    
     axios.get(`${API_URL}/materia/individual`,{headers: { Authorization: `Bearer ${token}` },
     })
       .then(response => {
         setAsignaturas(response.data);
-
       })
       .catch(error => {
         ErrorMessage(error);
-
       })
+  }, []);
 
-
-  }, [])
+  useEffect(() => {
+    if (modoEdicion && datosIniciales) {
+      setAsignatura(datosIniciales.Materia);
+      setDia1(datosIniciales.dias?.[0] || "");
+      setDia2(datosIniciales.dias?.[1] || "");
+      setHoraInicio(datosIniciales.horaInicio || "");
+      setHoraFin(datosIniciales.horaFin || "");
+      setHora1(datosIniciales.hora1 || null);
+      setHora2(datosIniciales.hora2 || null);
+    }
+  }, [modoEdicion, datosIniciales]);
  
 
   const handleSubmit = () => {
@@ -55,14 +63,10 @@ function CrearCursoIndividual({ onCancel, onSave, periodo,docente }) {
       if(dia1===dia2){
         throw new Error("Los días deben ser diferentes")
       }
-      console.log("esta es la asignatura",docente)
       const newAsignacion = { hora1,hora2,horaInicio, horaFin, dias, ID_periodo_academico: Number(periodo), nroCedula_docente: docente.nroCedula, ID_materia: asignatura.ID, cupos: 1 };
       onSave(newAsignacion)
-        
-      ;
     } catch (error) {
       ErrorMessage(error)
-      console.log(error)
     }
 
   };
@@ -70,7 +74,7 @@ function CrearCursoIndividual({ onCancel, onSave, periodo,docente }) {
   return (
     <div className="modal-overlay">
       <div className='modal-container'>
-        <h2 className='modal-title'>Agregar curso</h2>
+        <h2 className='modal-title'>{modoEdicion ? "Editar curso" : "Agregar curso"}</h2>
         <div className="modal-form">
           <div className='rows'>
 

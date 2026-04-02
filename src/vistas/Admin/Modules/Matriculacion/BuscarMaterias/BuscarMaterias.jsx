@@ -122,10 +122,8 @@ function BuscarMaterias() {
         `${API_URL}/asignacion/obtener/materias/${periodo.ID}/${estudiante.nivel}/${asignatura}/${estudiante.jornada}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("asignaciones obtenidas", data);
-      setAsignaciones(data);
+        setAsignaciones(data);
     } catch (error) {
-      console.log("error al obtener asignaciones", error);
       ErrorMessage(error);
     }
   };
@@ -166,9 +164,15 @@ function BuscarMaterias() {
   };
 
   return (
-    <div ref={wrapRef} className="gcd-wrapper"> {/* Reutilizamos Wrapper con scroll */}
+    <div ref={wrapRef} className="gcd-wrapper">
 
-      <h1 className="gcd-title"> {/* Reutilizamos estilo de título */}
+      <div className="gcd-actions-bar">
+        <button className="btn-volver" onClick={() => navigate(-1)}>
+          ← Volver
+        </button>
+      </div>
+
+      <h1 className="gcd-title">
         Matricula de {estudiante.primer_nombre} {estudiante.primer_apellido}
       </h1>
 
@@ -315,6 +319,7 @@ function BuscarMaterias() {
               setMateriasSeleccionadas={setInscripciones}
               jornada={estudiante.jornada}
               nivel={estudiante.nivel}
+              setAsignaciones={setAsignaciones}
             />
           </div>
         )}
