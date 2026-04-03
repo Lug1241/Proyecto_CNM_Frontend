@@ -7,14 +7,14 @@ import { ErrorMessage } from "../../Utils/ErrorMesaje";
 import { calcularPromedioQuimestral, calcularPromedioComportamiento, calcularValoracionComportamiento, abreviarNivel } from "./Promedios";
 import "./Parcial.css";
 
-const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
+const Quimestral = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
 
   const idContenedor = `pdf-quimestral-quim${quimestreSeleccionado}`;
 
   // Estado que contendrá los datos combinados (por estudiante) provenientes de los parciales
   const [datos, setDatos] = useState([]);
 
-  
+
   const obtenerEtiquetaQuimestre = () => {
     return quimestreSeleccionado === "1" ? "Q1" : "Q2";
   };
@@ -277,7 +277,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
   const esFilaDeshabilitada = (row) => {
     // Si es soloLectura, siempre deshabilitado
     if (soloLectura) return true;
-    
+
     // Si la fila está guardada (tiene idQuimestral), está deshabilitada
     // INCLUSO si forceEdit está activo (botón amarillo presionado)
     if (savedKeysQuim && row.idInscripcion) {
@@ -287,18 +287,18 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
         return true;
       }
     }
-    
+
     // Si forceEdit está activo, las NO guardadas están habilitadas
     if (forceEdit) return false;
-    
+
     // Si estamos fuera de rango, deshabilitado
     if (!isWithinRange) return true;
-    
+
     // Si inputsDisabled es true, deshabilitado
     return inputsDisabled;
   };
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
+  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     // Validar que el examen esté completo
     if (!rowData["Examen"] || rowData["Examen"] === "") {
       Swal.fire({
@@ -307,6 +307,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
         text: "Debes ingresar la nota del examen antes de guardar.",
         confirmButtonText: "OK"
       });
+      if (onErrorCallback) onErrorCallback("validacion");
       return;
     }
 
@@ -347,7 +348,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
           const copiaOriginal = [...datosOriginales];
           copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
           setDatosOriginales(copiaOriginal);
-          
+
           // Actualizar savedKeysQuim para bloquear la fila
           if (agregarSavedKeyQuim && makeKeyQuim) {
             const key = makeKeyQuim({
@@ -356,7 +357,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
             });
             agregarSavedKeyQuim(key);
           }
-          
+
           if (onSuccessCallback) onSuccessCallback();
         })
         .catch((error) => {
@@ -365,6 +366,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
             title: "Error al crear ❌.",
             text: "No se pudo crear la nota del examen.",
           });
+          if (onErrorCallback) onErrorCallback(error);
           ErrorMessage(error);
         });
       return;
@@ -374,7 +376,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
     const original = datosOriginales[rowIndex];
     const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
 
-    if (!haCambiado) {
+    if (!haCambiado && !globalEdit) {
       Swal.fire({
         icon: "info",
         title: "Sin cambios",
@@ -394,7 +396,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
         const copia = [...datosOriginales];
         copia[rowIndex] = JSON.parse(JSON.stringify(rowData));
         setDatosOriginales(copia);
-        
+
         // Actualizar savedKeysQuim para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKeyQuim && makeKeyQuim) {
           const key = makeKeyQuim({
@@ -402,11 +404,11 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
             quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2"
           });
           agregarSavedKeyQuim(key);
-          
+
           // Forzar re-render
           setDatos([...datos]);
         }
-        
+
         // Solo resetear editingRow si el guardado fue exitoso
         if (onSuccessCallback) onSuccessCallback();
       })
@@ -416,10 +418,54 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
           title: "Error al actualizar ❌.",
           text: "No se pudo actualizar la nota del examen.",
         });
+        if (onErrorCallback) onErrorCallback(error);
         ErrorMessage(error);
       });
   };
+  const handleGuardarAsync = (i, fila) => {
+    return new Promise((resolve, reject) => {
+      handleGuardar(i, fila, resolve, reject);
+    });
+  };
+  useEffect(() => {
+    if (onGuardarTodo) {
+      onGuardarTodo(handleGuardarTodo);
+    }
+  }, [datos]);
 
+  const handleGuardarTodo = async () => {
+    let errores = [];
+    let exitos = [];
+
+    for (const [i, fila] of datos.entries()) {
+      try {
+        await handleGuardarAsync(i, fila);
+        exitos.push(i);
+      } catch {
+        errores.push(i);
+      }
+    }
+
+    if (errores.length === 0) {
+      Swal.fire({
+        icon: "success",
+        title: "Guardado completo",
+        text: "Todas las filas se guardaron correctamente ✅",
+      });
+
+      // 🔥 AQUÍ
+      if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Guardado parcial",
+        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+      });
+    }
+    if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+  };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idQuimestral) {
       Swal.fire({
@@ -462,10 +508,10 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
                 }
                 return fila;
               });
-              
+
               setDatos(nuevosDatos);
               setDatosOriginales(JSON.parse(JSON.stringify(nuevosDatos)));
-              
+
               // Remover de savedKeys
               if (savedKeysQuim && makeKeyQuim) {
                 const key = makeKeyQuim({
@@ -501,6 +547,7 @@ const Quimestral = ({ quimestreSeleccionado, parcial1Data, parcial2Data, actuali
         </div>
       )}
       <Tabla
+        habilitarTodasFilas={globalEdit}
         columnasAgrupadas={columnasAgrupadas}
         columnas={columnas}
         datos={datos}

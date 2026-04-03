@@ -315,6 +315,7 @@ function MateriasIndividuales() {
             <option value="1ro BCH">1ro BCH</option>
             <option value="2do BCH">2do BCH</option>
             <option value="3ro BCH">3ro BCH</option>
+            <option value="BE">BE</option>
             <option value="BCH">BCH</option>
             <option value="BM">BM</option>
             <option value="BS">BS</option>

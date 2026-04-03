@@ -5,7 +5,7 @@ import axios from "axios";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import "../Parcial.css";
 
-const FinalBE = ({ quim1Data, quim2Data, datosModulo, escala, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, actualizarDatosFinal, savedKeysFinal, makeKeyFinal, editingRow, setEditingRow }) => {
+const FinalBE = ({ globalEdit, quim1Data, quim2Data, datosModulo, escala, editingRow, setEditingRow }) => {
   const [datos, setDatos] = useState([]);
   const idContenedor = `pdf-final`;
 
@@ -58,7 +58,7 @@ const FinalBE = ({ quim1Data, quim2Data, datosModulo, escala, inputsDisabled, on
           let nroGlobal = 1;
           const todosLosDatos = [];
 
-          resultados.forEach(({ asignacion, estudiantes }) => {
+          resultados.forEach(({estudiantes }) => {
             if (!estudiantes || estudiantes.length === 0) return;
 
             estudiantes.forEach(est => {
@@ -169,6 +169,7 @@ const FinalBE = ({ quim1Data, quim2Data, datosModulo, escala, inputsDisabled, on
     <div id={idContenedor} className="container tabla-final-be">
       <HeaderTabla datosEncabezado={datosEncabezado} imagenIzquierda="/ConservatorioNacional.png" />
       <Tabla
+        habilitarTodasFilas={globalEdit}
         columnasAgrupadas={columnasAgrupadas}
         columnas={columnas}
         datos={datosConEstilos}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import HeaderTabla from "../../../components/HeaderTabla";
 import Tabla from "../../../components/Tabla";
 import axios from "axios";
@@ -6,7 +6,7 @@ import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import Swal from 'sweetalert2';
 import "../Parcial.css";
 
-function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
+function ParcialBE({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
   // ID dinámico: pdf-parcial1-quim1, pdf-parcial2-quim1, pdf-parcial1-quim2, etc.
   const idContenedor = `pdf-parcial-be${parcialSeleccionado}-quim${quimestreSeleccionado}`;
 
@@ -78,7 +78,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
 
   const nombreColumnaExtra = escala === "cualitativa" ? "CUALITATIVA" : "CUANTITATIVA";
   const nombreColumnaExtra1 = escala === "cualitativa" ? "CUALITATIVA\u00A0" : "CUANTITATIVA\u00A0";
-  
+
   const columnas = [
     "INSUMO 1", "INSUMO 2", "PROMEDIO", nombreColumnaExtra, "PONDERACIÓN 70%", "EVALUACIÓN SUMATIVA", "EVALUACIÓN MEJORAMIENTO",
     "PROMEDIO DE MEJORA", "PROMEDIO SUMATIVAS", "PONDERACIÓN 30%", "NOTA PARCIAL",
@@ -121,7 +121,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
   const esFilaDeshabilitada = (row) => {
     // Si es soloLectura, siempre deshabilitado
     if (soloLectura) return true;
-    
+
     // Si la fila está guardada (tiene idParcial), está deshabilitada
     // INCLUSO si forceEdit está activo (botón amarillo presionado)
     if (savedKeys && row.idInscripcion) {
@@ -132,13 +132,13 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
         return true;
       }
     }
-    
+
     // Si forceEdit está activo, las NO guardadas están habilitadas
     if (forceEdit) return false;
-    
+
     // Si estamos fuera de rango, deshabilitado
     if (!isWithinRange) return true;
-    
+
     // Si inputsDisabled es true, deshabilitado
     return inputsDisabled;
   };
@@ -385,7 +385,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
     }
   }, [datosModulo, quimestreSeleccionado, parcialSeleccionado]);
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
+  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     if (!rowData.idParcial) {
       // Si no existe el registro, intentamos crearlo
       // Validar que todos los campos obligatorios estén completos (mejoramiento NO es obligatorio)
@@ -395,17 +395,18 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
       if (!rowData["EVALUACIÓN SUMATIVA"] || rowData["EVALUACIÓN SUMATIVA"] === "") camposVacios.push("Evaluación Sumativa");
 
       if (camposVacios.length > 0) {
-        const listaCampos = camposVacios.length === 1 
+        const listaCampos = camposVacios.length === 1
           ? camposVacios[0]
           : camposVacios.length === 2
-          ? camposVacios.join(' y ')
-          : `${camposVacios.slice(0, -1).join(', ')} y ${camposVacios[camposVacios.length - 1]}`;
+            ? camposVacios.join(' y ')
+            : `${camposVacios.slice(0, -1).join(', ')} y ${camposVacios[camposVacios.length - 1]}`;
         Swal.fire({
           icon: "warning",
           title: "Faltan datos",
           text: `Debes completar: ${listaCampos}`,
           confirmButtonText: "OK"
         });
+        if (onErrorCallback) onErrorCallback("validacion");
         return;
       }
 
@@ -446,6 +447,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
             text: "No se pudo crear la calificación.",
           });
           ErrorMessage(error);
+          if (onErrorCallback) onErrorCallback(error);
         });
       return;
     }
@@ -457,25 +459,26 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
     if (!rowData["EVALUACIÓN SUMATIVA"] || rowData["EVALUACIÓN SUMATIVA"] === "") camposVacios.push("Evaluación Sumativa");
 
     if (camposVacios.length > 0) {
-      const listaCampos = camposVacios.length === 1 
+      const listaCampos = camposVacios.length === 1
         ? camposVacios[0]
         : camposVacios.length === 2
-        ? camposVacios.join(' y ')
-        : `${camposVacios.slice(0, -1).join(', ')} y ${camposVacios[camposVacios.length - 1]}`;
-      
+          ? camposVacios.join(' y ')
+          : `${camposVacios.slice(0, -1).join(', ')} y ${camposVacios[camposVacios.length - 1]}`;
+
       Swal.fire({
         icon: "warning",
         title: "Faltan datos",
         text: `Debes completar: ${listaCampos}`,
         confirmButtonText: "OK"
       });
+      if (onErrorCallback) onErrorCallback("validacion");
       return;
     }
 
     const original = datosOriginales[rowIndex];
     const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
 
-    if (!haCambiado) {
+    if (!haCambiado && !globalEdit) {
       Swal.fire({
         icon: "info",
         title: "Sin cambios",
@@ -505,7 +508,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
         const nuevaCopia = [...datosOriginales];
         nuevaCopia[rowIndex] = JSON.parse(JSON.stringify(rowData));
         setDatosOriginales(nuevaCopia);
-        
+
         // Actualizar savedKeys para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKey && makeKey) {
           const key = makeKey({
@@ -514,11 +517,11 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
             parcial: obtenerEtiquetaParcial()
           });
           agregarSavedKey(key);
-          
+
           // Forzar re-render
           setDatos([...datos]);
         }
-        
+
         // Solo resetear editingRow si el guardado fue exitoso
         if (onSuccessCallback) onSuccessCallback();
       })
@@ -529,9 +532,53 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
           text: "No se pudo actualizar la calificación.",
         });
         ErrorMessage(error);
+        if (onErrorCallback) onErrorCallback(error);
       });
   };
+  const handleGuardarAsync = (i, fila) => {
+    return new Promise((resolve, reject) => {
+      handleGuardar(i, fila, resolve, reject);
+    });
+  };
+  useEffect(() => {
+    if (onGuardarTodo) {
+      onGuardarTodo(handleGuardarTodo);
+    }
+  }, [datos]);
 
+  const handleGuardarTodo = async () => {
+    let errores = [];
+    let exitos = [];
+
+    for (const [i, fila] of datos.entries()) {
+      try {
+        await handleGuardarAsync(i, fila);
+        exitos.push(i);
+      } catch {
+        errores.push(i);
+      }
+    }
+
+    if (errores.length === 0) {
+      Swal.fire({
+      icon: "success",
+      title: "Guardado completo",
+      text: "Todas las filas se guardaron correctamente ✅",
+    });
+
+    // 🔥 AQUÍ
+    if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+  } else {
+    Swal.fire({
+      icon: "warning",
+      title: "Guardado parcial",
+      text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+    });
+    }
+    if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+  };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idParcial) {
       Swal.fire({
@@ -584,10 +631,10 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
                 }
                 return fila;
               });
-              
+
               setDatos(nuevosDatos);
               setDatosOriginales(JSON.parse(JSON.stringify(nuevosDatos)));
-              
+
               // Remover de savedKeys
               if (savedKeys && makeKey) {
                 const key = makeKey({
@@ -620,6 +667,7 @@ function ParcialBE({ quimestreSeleccionado, parcialSeleccionado, actualizarDatos
         </div>
       )}
       <Tabla
+        habilitarTodasFilas={globalEdit}
         columnasAgrupadas={columnasAgrupadas}
         columnas={columnas}
         datos={datos}
