@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import "./Parcial.css";
 import { calcularPromedioParcial, calcularSumaComportamiento, calcularValoracionComportamiento, abreviarNivel } from "./Promedios"
 
-function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
+function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
   // ID dinámico: pdf-parcial1-quim1, pdf-parcial2-quim1, pdf-parcial1-quim2, etc.
   const idContenedor = `pdf-parcial${parcialSeleccionado}-quim${quimestreSeleccionado}`;
 
@@ -105,7 +105,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
   const esFilaDeshabilitada = (row) => {
     // Si es soloLectura, siempre deshabilitado
     if (soloLectura) return true;
-    
+
     // Si la fila está guardada (tiene idParcial), está deshabilitada
     // INCLUSO si forceEdit está activo (botón amarillo presionado)
     if (savedKeys && row.idInscripcion) {
@@ -117,13 +117,13 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         return true; // Bloqueada incluso con forceEdit
       }
     }
-    
+
     // Si forceEdit está activo y la fila NO está guardada, la desbloqueamos
     if (forceEdit) return false;
-    
+
     // Si estamos fuera de rango, deshabilitado
     if (!isWithinRange) return true;
-    
+
     // Si inputsDisabled es true, deshabilitado
     return inputsDisabled;
   };
@@ -235,7 +235,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
 
     // ✅ Soporte para materias agrupadas (múltiples asignaciones)
     const esGrupoIndividual = datosModulo?.asignaciones && datosModulo.asignaciones.length > 0;
-    
+
     if (esGrupoIndividual) {
       // Cargar datos de todas las asignaciones del grupo
       const promesasAsignaciones = datosModulo.asignaciones.map(asignacion => {
@@ -318,7 +318,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         .then(([respEstudiantes, respParciales]) => {
           const estudiantes = respEstudiantes.data;
           const parciales = respParciales.data;
-          
+
           const nuevosDatos = estudiantes.map(est => {
             const parcialGuardado = parciales.find(p =>
               p.idInscripcion === est.idInscripcion &&
@@ -362,13 +362,13 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
     }
   }, [datosModulo, quimestreSeleccionado, parcialSeleccionado]);
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
+  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     // Validar que todos los campos obligatorios estén completos
     const camposVacios = [];
     if (!rowData["INSUMO 1"] || rowData["INSUMO 1"] === "") camposVacios.push("Insumo 1");
     if (!rowData["INSUMO 2"] || rowData["INSUMO 2"] === "") camposVacios.push("Insumo 2");
     if (!rowData["EVALUACIÓN SUMATIVA"] || rowData["EVALUACIÓN SUMATIVA"] === "") camposVacios.push("Evaluación Sumativa");
-    
+
     // Validar campos de comportamiento
     columnasComportamiento.forEach(col => {
       if (rowData[col] === "" || rowData[col] === null || rowData[col] === undefined) {
@@ -384,6 +384,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         confirmButtonText: "OK"
       });
       // NO ejecutar callback - mantener fila editable
+      if (onErrorCallback) onErrorCallback("validacion");
       return;
     }
 
@@ -422,7 +423,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
           const copiaOriginal = [...datosOriginales];
           copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
           setDatosOriginales(copiaOriginal);
-          
+
           // Actualizar savedKeys para bloquear la fila
           if (agregarSavedKey && makeKey) {
             const key = makeKey({
@@ -432,8 +433,8 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
             });
             agregarSavedKey(key);
           }
-          
-          if (onSuccessCallback) onSuccessCallback();
+
+          if (onErrorCallback) onErrorCallback("validacion"); // Para mantener la fila bloqueada después de crear
         })
         .catch((error) => {
           Swal.fire({
@@ -441,6 +442,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
             title: "Error al crear ❌.",
             text: "No se pudo crear la calificación.",
           });
+          if (onErrorCallback) onErrorCallback(error);
           ErrorMessage(error);
         });
       return;
@@ -450,7 +452,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
     const original = datosOriginales[rowIndex];
     const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
 
-    if (!haCambiado) {
+    if (!haCambiado && !globalEdit) {
       Swal.fire({
         icon: "info",
         title: "Sin cambios",
@@ -470,7 +472,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         const nuevaCopia = [...datosOriginales];
         nuevaCopia[rowIndex] = JSON.parse(JSON.stringify(rowData));
         setDatosOriginales(nuevaCopia);
-        
+
         // Actualizar savedKeys para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKey && makeKey) {
           const key = makeKey({
@@ -479,11 +481,11 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
             parcial: obtenerEtiquetaParcial()
           });
           agregarSavedKey(key);
-          
+
           // Forzar re-render actualizando datos con spread para que React detecte el cambio
           setDatos([...datos]);
         }
-        
+
         // Solo resetear editingRow si el guardado fue exitoso
         if (onSuccessCallback) onSuccessCallback();
       })
@@ -493,10 +495,53 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
           title: "Error al actualizar ❌.",
           text: "No se pudo actualizar la calificación.",
         });
+        if (onErrorCallback) onErrorCallback(error);
         ErrorMessage(error);
       });
   };
+  const handleGuardarAsync = (i, fila) => {
+    return new Promise((resolve, reject) => {
+      handleGuardar(i, fila, resolve, reject);
+    });
+  };
+  useEffect(() => {
+    if (onGuardarTodo) {
+      onGuardarTodo(handleGuardarTodo);
+    }
+  }, [datos]);
 
+  const handleGuardarTodo = async () => {
+    let errores = [];
+    let exitos = [];
+
+    for (const [i, fila] of datos.entries()) {
+      try {
+        await handleGuardarAsync(i, fila);
+        exitos.push(i);
+      } catch {
+        errores.push(i);
+      }
+    }
+
+    if (errores.length === 0) {
+      Swal.fire({
+        icon: "success",
+        title: "Guardado completo",
+        text: "Todas las filas se guardaron correctamente ✅",
+      });
+
+     
+
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Guardado parcial",
+        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+      });
+    }
+    if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+  };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idParcial) {
       Swal.fire({
@@ -548,10 +593,10 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
                 }
                 return fila;
               });
-              
+
               setDatos(nuevosDatos);
               setDatosOriginales(JSON.parse(JSON.stringify(nuevosDatos)));
-              
+
               // 2. Remover de savedKeys
               if (savedKeys && makeKey) {
                 const key = makeKey({
@@ -584,6 +629,7 @@ function Parcial({ quimestreSeleccionado, parcialSeleccionado, actualizarDatosPa
         </div>
       )}
       <Tabla
+        habilitarTodasFilas={globalEdit}
         columnasAgrupadas={columnasAgrupadas}
         columnas={columnas}
         datos={datos}

@@ -12,16 +12,24 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
   quim2Data, finalData, handleActualizarParcial1Quim1, handleActualizarParcial2Quim1, handleActualizarParcial1Quim2, handleActualizarParcial2Quim2,
   handleActualizarQuim1, handleActualizarQuim2, handleActualizarFinal, handleEditarFila, soloLectura, getRangoValido, esPorSolicitud,
   savedKeys, savedKeysQuim, savedKeysFinal, makeKey, makeKeyQuim, makeKeyFinal, agregarSavedKey, agregarSavedKeyQuim, agregarSavedKeyFinal,
-  editingRow, setEditingRow}) {
+  editingRow, setEditingRow }) {
 
   const [escalaSeleccionada, setEscalaSeleccionada] = useState("cualitativa");
-
+  const [isEditing, setIsEditing] = useState(false);
+  const [guardarTodoFn, setGuardarTodoFn] = useState(null);
+  const esNotaFinal = activeMainTab === "notaFinal";
   // Determinar el activeModule según el rol del usuario
   const getActiveModule = () => {
     if (!usuario) return null;
     const esSecretaria = usuario.subRol?.toLowerCase() === "secretaria";
     return esSecretaria ? null : 1; // Secretaria: sin módulo activo, Profesor: módulo 1
   };
+  const handleEnableEdit = () => {
+
+    setIsEditing(true);
+  }
+
+
 
   return (
     <>
@@ -38,7 +46,27 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
               <div className="d-flex flex-column align-items-end gap-2">
                 {/* Línea de Exportaciones */}
                 <div className="d-flex align-items-center gap-2">
-                  <span className="label-text">Exportaciones:</span>
+                  {/* Botón Habilitar edición */}
+                  <button
+                    className="btn btn-warning btn-sm"
+                    onClick={handleEnableEdit}
+                    title="Habilitar edición"
+                    disabled={esNotaFinal}
+                  >
+                    <i className="bi bi-pencil-fill"></i>
+                  </button>
+
+                  {/* Botón Guardar */}
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => guardarTodoFn?.()}
+                    title="Guardar cambios"
+                    disabled={!isEditing}
+                  >
+                    <i className="bi bi-save-fill"></i>
+                  </button>
+
+                  {/* Botón Exportar PDF */}
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={handleExportPDF}
@@ -46,6 +74,8 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                   >
                     <i className="bi bi-file-earmark-pdf-fill"></i>
                   </button>
+
+
                 </div>
                 {/* Línea de Escala */}
                 <div className="d-flex align-items-center gap-2">
@@ -74,6 +104,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                 <Tabs activeKey={activeSubTabQuim1} className="mb-3" fill onSelect={(k) => setActiveSubTabQuim1(k)}>
                   <Tab eventKey="parcial1-quim1" title="Parcial 1 - Quim 1">
                     <Parcial
+                      globalEdit={isEditing}
                       key="parcial1-quim1-be"
                       quimestreSeleccionado="1"
                       parcialSeleccionado="1"
@@ -93,11 +124,14 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKey={agregarSavedKey}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
 
                   <Tab eventKey="parcial2-quim1" title="Parcial 2 - Quim 1">
                     <Parcial
+                      globalEdit={isEditing}
                       key="parcial2-quim1-be"
                       quimestreSeleccionado="1"
                       parcialSeleccionado="2"
@@ -117,11 +151,14 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKey={agregarSavedKey}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
 
                   <Tab eventKey="quimestral-quim1" title="Quimestre 1">
                     <Quimestral
+                      globalEdit={isEditing}
                       key="quimestral-quim1-be"
                       quimestreSeleccionado="1"
                       parcial1Data={parcial1Quim1Data}
@@ -141,6 +178,8 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKeyQuim={agregarSavedKeyQuim}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
                 </Tabs>
@@ -151,6 +190,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                 <Tabs activeKey={activeSubTabQuim2} className="mb-3" fill onSelect={(k) => setActiveSubTabQuim2(k)}>
                   <Tab eventKey="parcial1-quim2" title="Parcial 1 - Quim 2">
                     <Parcial
+                      globalEdit={isEditing}
                       key="parcial1-quim2-be"
                       quimestreSeleccionado="2"
                       parcialSeleccionado="1"
@@ -170,11 +210,14 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKey={agregarSavedKey}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
 
                   <Tab eventKey="parcial2-quim2" title="Parcial 2 - Quim 2">
                     <Parcial
+                      globalEdit={isEditing}
                       key="parcial2-quim2-be"
                       quimestreSeleccionado="2"
                       parcialSeleccionado="2"
@@ -194,11 +237,14 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKey={agregarSavedKey}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
 
                   <Tab eventKey="quimestral-quim2" title="Quimestre 2">
                     <Quimestral
+                      globalEdit={isEditing}
                       key="quimestral-quim2-be"
                       quimestreSeleccionado="2"
                       parcial1Data={parcial1Quim2Data}
@@ -218,6 +264,8 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                       agregarSavedKeyQuim={agregarSavedKeyQuim}
                       editingRow={editingRow}
                       setEditingRow={setEditingRow}
+                      onGuardarTodo={(fn) => setGuardarTodoFn(() => fn)}
+                      onGuardarTodoFinished={() => setIsEditing(false)}
                     />
                   </Tab>
                 </Tabs>
@@ -227,6 +275,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
               <Tab eventKey="notaFinal" title="Nota Final">
                 <div className="tab-pane active">
                   <Final
+                    globalEdit={isEditing}
                     key="notaFinal-be"
                     quim1Data={quim1Data}
                     quim2Data={quim2Data}
@@ -244,6 +293,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                     makeKeyFinal={makeKeyFinal}
                     editingRow={editingRow}
                     setEditingRow={setEditingRow}
+                    
                   />
                 </div>
               </Tab>

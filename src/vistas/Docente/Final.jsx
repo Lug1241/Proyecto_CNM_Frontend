@@ -7,11 +7,11 @@ import { ErrorMessage } from "../../Utils/ErrorMesaje";
 import { calcularPromedioAnual, calcularPromedioComportamientoFinal, calcularPromedioFinalConSupletorio, determinarEstado, calcularValoracionComportamiento, abreviarNivel } from "./Promedios";
 import "./Parcial.css";
 
-const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysFinal, makeKeyFinal, agregarSavedKeyFinal, editingRow, setEditingRow }) => {
+const Final = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysFinal, makeKeyFinal, agregarSavedKeyFinal, editingRow, setEditingRow }) => {
   const [datos, setDatos] = useState([]);
 
   const idContenedor = `pdf-final`;
-
+console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
   const transformarDatosFinalParaGuardar = (datos) => {
     return datos.map((fila) => {
       const supleRaw = fila["Examen Supletorio"];
@@ -318,7 +318,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
   const esFilaDeshabilitada = (row) => {
     // Si es soloLectura, siempre deshabilitado
     if (soloLectura) return true;
-    
+
     // Si la fila está guardada (tiene idFinal), está deshabilitada
     // INCLUSO si forceEdit está activo (botón amarillo presionado)
     if (savedKeysFinal && row.idInscripcion) {
@@ -327,18 +327,18 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         return true;
       }
     }
-    
+
     // Si forceEdit está activo, las NO guardadas están habilitadas
     if (forceEdit) return false;
-    
+
     // Si estamos fuera de rango, deshabilitado
     if (!isWithinRange) return true;
-    
+
     // Si inputsDisabled es true, deshabilitado
     return inputsDisabled;
   };
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback) => {
+  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     // Validar que el examen supletorio tenga valor si es necesario
     const promedioAnual = parseFloat(rowData._promedioAnual);
     if (promedioAnual < 7 && (!rowData["Examen Supletorio"] || rowData["Examen Supletorio"] === "")) {
@@ -348,6 +348,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         text: "Este estudiante requiere examen supletorio. Debes ingresar la nota antes de guardar.",
         confirmButtonText: "OK"
       });
+      if (onErrorCallback) onErrorCallback("validacion");
       return;
     }
 
@@ -356,7 +357,8 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
       parseFloat(rowData["Examen Supletorio"] || 0).toFixed(2) !==
       parseFloat(original["Examen Supletorio"] || 0).toFixed(2);
 
-    if (!haCambiado) {
+    if (!haCambiado && !globalEdit) {
+      console.log("este es el valor de globalEdit", globalEdit);
       Swal.fire({
         icon: "info",
         title: "Sin cambios",
@@ -384,7 +386,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
     const url = rowData.idFinal
       ? `${import.meta.env.VITE_URL_DEL_BACKEND}/finales/${rowData.idFinal}`
       : `${import.meta.env.VITE_URL_DEL_BACKEND}/finales`;
-    
+
     const axiosRequest = rowData.idFinal
       ? axios.put(url, body)
       : axios.post(url, body);
@@ -395,7 +397,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         Swal.fire({
           icon: "success",
           title: isCreate ? "Creado" : "Actualizado",
-          text: isCreate 
+          text: isCreate
             ? "La nota del examen supletorio se creó correctamente."
             : "La nota del examen supletorio se actualizó correctamente.",
         });
@@ -405,8 +407,8 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         const estadoFinal = determinarEstado(promedioFinalRecalculado, true);
 
         // Obtener el idFinal (nuevo si se creó, mismo si se actualizó)
-        const nuevoIdFinal = isCreate 
-          ? (response.data?.ID || response.data?.id || rowData.idFinal) 
+        const nuevoIdFinal = isCreate
+          ? (response.data?.ID || response.data?.id || rowData.idFinal)
           : rowData.idFinal;
 
         const nuevaCopia = [...datos];
@@ -430,22 +432,22 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
           "Estado": estadoFinal,
         };
         setDatosOriginales(nuevosOriginales);
-        
+
         // Actualizar savedKeysFinal para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKeyFinal && makeKeyFinal) {
           const key = makeKeyFinal({ id_inscripcion: rowData.idInscripcion });
           agregarSavedKeyFinal(key);
-          
+
           // Forzar re-render
           setDatos([...nuevaCopia]);
         }
-        
+
         // Solo resetear editingRow si el guardado fue exitoso
         if (onSuccessCallback) onSuccessCallback();
       })
       .catch((error) => {
         let mensajeError = "No se pudo guardar el examen supletorio.";
-        
+
         if (error.response) {
           // El servidor respondió con un código de error
           if (error.response.status === 404) {
@@ -460,7 +462,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         } else if (error.request) {
           mensajeError = "No se recibió respuesta del servidor. Verifica tu conexión.";
         }
-        
+
         Swal.fire({
           icon: "error",
           title: "Error al guardar ❌",
@@ -469,7 +471,50 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         ErrorMessage(error);
       });
   };
+  const handleGuardarAsync = (i, fila) => {
+    return new Promise((resolve, reject) => {
+      handleGuardar(i, fila, resolve, reject);
+    });
+  };
+  useEffect(() => {
+    if (onGuardarTodo) {
+      onGuardarTodo(handleGuardarTodo);
+    }
+  }, [datos]);
 
+  const handleGuardarTodo = async () => {
+    let errores = [];
+    let exitos = [];
+
+    for (const [i, fila] of datos.entries()) {
+      try {
+        await handleGuardarAsync(i, fila);
+        exitos.push(i);
+      } catch {
+        errores.push(i);
+      }
+    }
+
+    if (errores.length === 0) {
+      Swal.fire({
+        icon: "success",
+        title: "Guardado completo",
+        text: "Todas las filas se guardaron correctamente ✅",
+      });
+
+      // 🔥 AQUÍ
+      if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+    } else {
+      Swal.fire({
+        icon: "warning",
+        title: "Guardado parcial",
+        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+      });
+    }
+    if (onGuardarTodoFinished) onGuardarTodoFinished();
+
+  };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idFinal) {
       Swal.fire({
@@ -510,10 +555,10 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
                 }
                 return fila;
               });
-              
+
               setDatos(nuevosDatos);
               setDatosOriginales(JSON.parse(JSON.stringify(nuevosDatos)));
-              
+
               // Remover de savedKeys
               if (savedKeysFinal && makeKeyFinal) {
                 const key = makeKeyFinal({
@@ -548,6 +593,7 @@ const Final = ({ quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputs
         </div>
       )}
       <Tabla
+        habilitarTodasFilas={globalEdit}
         columnasAgrupadas={columnasAgrupadas}
         columnas={columnas}
         datos={datosConEstilos}
