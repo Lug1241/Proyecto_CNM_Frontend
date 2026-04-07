@@ -24,6 +24,19 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
     const esSecretaria = usuario.subRol?.toLowerCase() === "secretaria";
     return esSecretaria ? null : 1; // Secretaria: sin módulo activo, Profesor: módulo 1
   };
+  const getCurrentTabKey = () => {
+    if (activeMainTab === "quimestre1") return activeSubTabQuim1;
+    if (activeMainTab === "quimestre2") return activeSubTabQuim2;
+    if (activeMainTab === "notaFinal") return "notaFinal";
+    return null;
+  };
+
+  const puedeEditarActual = () => {
+    const tab = getCurrentTabKey();
+    if (!tab) return false;
+
+    return getRangoValido(tab);
+  };
   const handleEnableEdit = () => {
 
     setIsEditing(true);
@@ -51,15 +64,24 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                     className="btn btn-warning btn-sm"
                     onClick={handleEnableEdit}
                     title="Habilitar edición"
-                    disabled={esNotaFinal}
+                    disabled={!puedeEditarActual()}   // 👈 AQUÍ LA CLAVE
                   >
                     <i className="bi bi-pencil-fill"></i>
                   </button>
 
-                  {/* Botón Guardar */}
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => guardarTodoFn?.()}
+                    onClick={() => {
+                      console.log("🟢 Click en guardar");
+                      console.log("📦 guardarTodoFn:", guardarTodoFn);
+
+                      if (!guardarTodoFn) {
+                        console.warn("❌ guardarTodoFn es NULL");
+                        return;
+                      }
+
+                      guardarTodoFn();
+                    }}
                     title="Guardar cambios"
                     disabled={!isEditing}
                   >
@@ -158,6 +180,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
 
                   <Tab eventKey="quimestral-quim1" title="Quimestre 1">
                     <Quimestral
+                      activo={activeMainTab === "quimestre1" && activeSubTabQuim1 === "quimestral-quim1"}
                       globalEdit={isEditing}
                       key="quimestral-quim1-be"
                       quimestreSeleccionado="1"
@@ -244,6 +267,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
 
                   <Tab eventKey="quimestral-quim2" title="Quimestre 2">
                     <Quimestral
+                      activo={activeMainTab === "quimestre2" && activeSubTabQuim2 === "quimestral-quim2"}
                       globalEdit={isEditing}
                       key="quimestral-quim2-be"
                       quimestreSeleccionado="2"
@@ -293,7 +317,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                     makeKeyFinal={makeKeyFinal}
                     editingRow={editingRow}
                     setEditingRow={setEditingRow}
-                    
+
                   />
                 </div>
               </Tab>

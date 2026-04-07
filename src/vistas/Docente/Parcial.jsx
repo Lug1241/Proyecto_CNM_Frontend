@@ -7,10 +7,10 @@ import Swal from 'sweetalert2';
 import "./Parcial.css";
 import { calcularPromedioParcial, calcularSumaComportamiento, calcularValoracionComportamiento, abreviarNivel } from "./Promedios"
 
-function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
+function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow, activo }) {
   // ID dinámico: pdf-parcial1-quim1, pdf-parcial2-quim1, pdf-parcial1-quim2, etc.
   const idContenedor = `pdf-parcial${parcialSeleccionado}-quim${quimestreSeleccionado}`;
-
+  console.log("Renderizando Parcial.jsx con ID:", idContenedor);
   const subtitulo = `ACTA DE CALIFICACIONES ${parcialSeleccionado === "1" ? "PRIMER" : "SEGUNDO"} PARCIAL - ${quimestreSeleccionado === "1" ? "PRIMER" : "SEGUNDO"} QUIMESTRE`;
 
   // ⬇️ Aquí implementamos la función para determinar la jornada
@@ -362,14 +362,27 @@ function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSe
     }
   }, [datosModulo, quimestreSeleccionado, parcialSeleccionado]);
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
-    // Validar que todos los campos obligatorios estén completos
+  const handleGuardar = (
+    rowIndex,
+    rowData,
+    onSuccessCallback,
+    onErrorCallback,
+    esMasivo = false
+  ) => {
+
+    console.log("🟡 [handleGuardar] INICIO", {
+      rowIndex,
+      idParcial: rowData.idParcial,
+      esMasivo
+    });
+
+    // 🔹 1. VALIDACIÓN
     const camposVacios = [];
+
     if (!rowData["INSUMO 1"] || rowData["INSUMO 1"] === "") camposVacios.push("Insumo 1");
     if (!rowData["INSUMO 2"] || rowData["INSUMO 2"] === "") camposVacios.push("Insumo 2");
     if (!rowData["EVALUACIÓN SUMATIVA"] || rowData["EVALUACIÓN SUMATIVA"] === "") camposVacios.push("Evaluación Sumativa");
 
-    // Validar campos de comportamiento
     columnasComportamiento.forEach(col => {
       if (rowData[col] === "" || rowData[col] === null || rowData[col] === undefined) {
         camposVacios.push(col);
@@ -377,17 +390,23 @@ function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSe
     });
 
     if (camposVacios.length > 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "Faltan datos",
-        text: `Debes completar: ${camposVacios.slice(0, 3).join(', ')}${camposVacios.length > 3 ? ` y ${camposVacios.length - 3} más` : ''}`,
-        confirmButtonText: "OK"
-      });
-      // NO ejecutar callback - mantener fila editable
-      if (onErrorCallback) onErrorCallback("validacion");
+      console.warn("🔴 [handleGuardar] VALIDACIÓN FALLIDA", camposVacios);
+
+      if (!esMasivo) {
+        Swal.fire({
+          icon: "warning",
+          title: "Faltan datos",
+          text: `Debes completar campos`,
+        });
+      }
+
+      onErrorCallback?.("validacion");
       return;
     }
 
+    console.log("🟢 [handleGuardar] VALIDACIÓN OK");
+
+    // 🔹 2. BODY
     const comportamiento = columnasComportamiento.map((col) =>
       parseInt(rowData[col]) || 0
     );
@@ -402,145 +421,134 @@ function Parcial({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSe
       parcial: obtenerEtiquetaParcial(),
     };
 
-    // Si no existe idParcial, crear el registro; si existe, actualizarlo
+    console.log("📤 [handleGuardar] BODY:", body);
+
+    // 🔹 3. CREATE
     if (!rowData.idParcial) {
+      console.log("🆕 [handleGuardar] CREANDO (POST)");
+
       axios
         .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/parciales`, body)
         .then((response) => {
-          Swal.fire({
-            icon: "success",
-            title: "Creado",
-            text: "Las calificaciones se guardaron correctamente.",
-          });
-          // Actualizar el idParcial en la fila
-          const nuevoIdParcial = response.data?.ID || response.data?.id || response.data?.insertId || null;
-          const copia = [...datos];
-          copia[rowIndex] = {
-            ...rowData,
-            idParcial: nuevoIdParcial
-          };
-          setDatos(copia);
-          const copiaOriginal = [...datosOriginales];
-          copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
-          setDatosOriginales(copiaOriginal);
+          console.log("✅ [POST OK]", response.data);
 
-          // Actualizar savedKeys para bloquear la fila
-          if (agregarSavedKey && makeKey) {
-            const key = makeKey({
-              id_inscripcion: rowData.idInscripcion,
-              quimestre: obtenerEtiquetaQuimestre(),
-              parcial: obtenerEtiquetaParcial()
+          if (!esMasivo) {
+            Swal.fire({
+              icon: "success",
+              title: "Guardado",
+              text: "La calificación se guardó correctamente ✅",
             });
-            agregarSavedKey(key);
           }
 
-          if (onErrorCallback) onErrorCallback("validacion"); // Para mantener la fila bloqueada después de crear
+          onSuccessCallback?.();
         })
         .catch((error) => {
-          Swal.fire({
-            icon: "error",
-            title: "Error al crear ❌.",
-            text: "No se pudo crear la calificación.",
-          });
-          if (onErrorCallback) onErrorCallback(error);
-          ErrorMessage(error);
+          console.error("❌ [POST ERROR]", error.response?.data || error);
+          onErrorCallback?.(error);
         });
+
       return;
     }
 
-    // Si existe idParcial, actualizar el registro existente
-    const original = datosOriginales[rowIndex];
-    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
-
-    if (!haCambiado && !globalEdit) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
-      });
-      return;
-    }
+    // 🔹 4. UPDATE
+    console.log("✏️ [handleGuardar] ACTUALIZANDO (PUT)");
 
     axios
       .put(`${import.meta.env.VITE_URL_DEL_BACKEND}/parciales/${rowData.idParcial}`, body)
       .then(() => {
-        Swal.fire({
-          icon: "success",
-          title: "Actualizado",
-          text: "Las calificaciones se actualizaron correctamente.",
-        });
-        const nuevaCopia = [...datosOriginales];
-        nuevaCopia[rowIndex] = JSON.parse(JSON.stringify(rowData));
-        setDatosOriginales(nuevaCopia);
+        console.log("✅ [PUT OK]");
 
-        // Actualizar savedKeys para bloquear la fila inmediatamente sin recargar
-        if (agregarSavedKey && makeKey) {
-          const key = makeKey({
-            id_inscripcion: rowData.idInscripcion,
-            quimestre: obtenerEtiquetaQuimestre(),
-            parcial: obtenerEtiquetaParcial()
+        if (!esMasivo) {
+          Swal.fire({
+            icon: "success",
+            title: "Actualizado",
+            text: "La calificación se actualizó correctamente ✅",
           });
-          agregarSavedKey(key);
-
-          // Forzar re-render actualizando datos con spread para que React detecte el cambio
-          setDatos([...datos]);
         }
 
-        // Solo resetear editingRow si el guardado fue exitoso
-        if (onSuccessCallback) onSuccessCallback();
+        onSuccessCallback?.();
       })
       .catch((error) => {
-        Swal.fire({
-          icon: "error",
-          title: "Error al actualizar ❌.",
-          text: "No se pudo actualizar la calificación.",
-        });
-        if (onErrorCallback) onErrorCallback(error);
-        ErrorMessage(error);
+        console.error("❌ [PUT ERROR]", error.response?.data || error);
+        onErrorCallback?.(error);
       });
   };
-  const handleGuardarAsync = (i, fila) => {
-    return new Promise((resolve, reject) => {
-      handleGuardar(i, fila, resolve, reject);
-    });
-  };
   useEffect(() => {
-    if (onGuardarTodo) {
+    if (activo && onGuardarTodo) {
+      console.log("📌 Registrando handleGuardarTodo desde Parcial:", idContenedor);
       onGuardarTodo(handleGuardarTodo);
     }
-  }, [datos]);
+  }, [activo, datos]);
 
   const handleGuardarTodo = async () => {
+
+    console.log("🚀 [handleGuardarTodo] INICIO");
+
+    // 🔴 VALIDACIÓN GLOBAL
+    const hayIncompletos = datos.some((fila, i) => {
+
+      const incompleto =
+        !fila["INSUMO 1"] ||
+        !fila["INSUMO 2"] ||
+        !fila["EVALUACIÓN SUMATIVA"] ||
+        columnasComportamiento.some(col =>
+          fila[col] === "" || fila[col] === null || fila[col] === undefined
+        );
+
+      if (incompleto) {
+        console.warn("🔴 Fila incompleta:", i, fila);
+      }
+
+      return incompleto;
+    });
+
+    if (hayIncompletos) {
+      console.error("⛔ [handleGuardarTodo] BLOQUEADO por datos incompletos");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Filas incompletas",
+        text: `Debes completar todas las calificaciones.`,
+      });
+
+      return;
+    }
+
+    console.log("🟢 [handleGuardarTodo] VALIDACIÓN GLOBAL OK");
+
     let errores = [];
-    let exitos = [];
 
     for (const [i, fila] of datos.entries()) {
+      console.log("➡️ Guardando fila:", i);
+
       try {
-        await handleGuardarAsync(i, fila);
-        exitos.push(i);
-      } catch {
+        await new Promise((resolve, reject) => {
+          handleGuardar(i, fila, resolve, reject, true);
+        });
+
+        console.log("✅ Fila guardada:", i);
+
+      } catch (err) {
+        console.error("❌ Error en fila:", i, err);
         errores.push(i);
       }
     }
+
+    console.log("📊 Resultado final:", { errores });
 
     if (errores.length === 0) {
       Swal.fire({
         icon: "success",
         title: "Guardado completo",
-        text: "Todas las filas se guardaron correctamente ✅",
       });
-
-     
-
     } else {
       Swal.fire({
-        icon: "warning",
-        title: "Guardado parcial",
-        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+        icon: "error",
+        title: "Errores al guardar",
       });
     }
-    if (onGuardarTodoFinished) onGuardarTodoFinished();
 
+    onGuardarTodoFinished?.();
   };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idParcial) {

@@ -253,6 +253,7 @@ function Calificaciones() {
     
         setSolicitudEnRango(dentroDeRango);
       } catch (error) {
+        console.log("Error al obtener la solicitud o fecha actual:", error);
         console.log("No hay solicitud aprobada o falló la petición");
         setSolicitudAceptada(null);
         setSolicitudEnRango(false);
