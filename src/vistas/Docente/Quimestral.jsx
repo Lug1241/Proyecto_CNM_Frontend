@@ -7,7 +7,7 @@ import { ErrorMessage } from "../../Utils/ErrorMesaje";
 import { calcularPromedioQuimestral, calcularPromedioComportamiento, calcularValoracionComportamiento, abreviarNivel } from "./Promedios";
 import "./Parcial.css";
 
-const Quimestral = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
+const Quimestral = ({ activo, onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
 
   const idContenedor = `pdf-quimestral-quim${quimestreSeleccionado}`;
 
@@ -298,128 +298,159 @@ const Quimestral = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestr
     return inputsDisabled;
   };
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
-    // Validar que el examen esté completo
+  const handleGuardar = (
+    rowIndex,
+    rowData,
+    onSuccessCallback,
+    onErrorCallback,
+    esMasivo = false
+  ) => {
+
+    console.log("🚀 [Quimestral] handleGuardar", { rowIndex, rowData, esMasivo });
+
+    // 🔹 VALIDACIÓN
     if (!rowData["Examen"] || rowData["Examen"] === "") {
-      Swal.fire({
-        icon: "warning",
-        title: "Faltan datos",
-        text: "Debes ingresar la nota del examen antes de guardar.",
-        confirmButtonText: "OK"
-      });
-      if (onErrorCallback) onErrorCallback("validacion");
+
+      if (!esMasivo) {
+        Swal.fire({
+          icon: "warning",
+          title: "Faltan datos",
+          text: "Debes ingresar la nota del examen antes de guardar.",
+        });
+      }
+
+      onErrorCallback?.("validacion");
       return;
     }
 
     const examen = parseFloat(rowData["Examen"]);
+
     if (isNaN(examen) || examen < 0 || examen > 10) {
-      Swal.fire({
-        icon: "error",
-        title: "Valor inválido",
-        text: "La nota del examen debe estar entre 0.00 y 10.00.",
-      });
+
+      if (!esMasivo) {
+        Swal.fire({
+          icon: "error",
+          title: "Valor inválido",
+          text: "La nota debe estar entre 0 y 10",
+        });
+      }
+
+      onErrorCallback?.("validacion");
       return;
     }
 
     const body = {
       id_inscripcion: rowData.idInscripcion,
-      quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2",
+      quimestre: obtenerEtiquetaQuimestre(),
       examen,
     };
 
-    // Si no existe idQuimestral, crear el registro; si existe, actualizarlo
+    console.log("📡 [Quimestral] body:", body);
+
+    // 🔹 CREATE
     if (!rowData.idQuimestral) {
-      axios
-        .post(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales`, body)
+      axios.post(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales`, body)
         .then((response) => {
-          Swal.fire({
-            icon: "success",
-            title: "Creado",
-            text: "La nota del examen quimestral se guardó correctamente.",
-          });
-          // Actualizar el idQuimestral en la fila
-          const nuevoIdQuimestral = response.data?.ID || response.data?.id || response.data?.insertId || null;
+
+          console.log("✅ [Quimestral] creado:", response.data);
+
+          if (!esMasivo) {
+            Swal.fire({
+              icon: "success",
+              title: "Creado",
+              text: "Guardado correctamente",
+            });
+          }
+
+          const nuevoId = response.data?.ID || response.data?.id || response.data?.insertId || null;
+
           const copia = [...datos];
-          copia[rowIndex] = {
-            ...rowData,
-            idQuimestral: nuevoIdQuimestral
-          };
+          copia[rowIndex] = { ...rowData, idQuimestral: nuevoId };
           setDatos(copia);
+
           const copiaOriginal = [...datosOriginales];
           copiaOriginal[rowIndex] = JSON.parse(JSON.stringify(copia[rowIndex]));
           setDatosOriginales(copiaOriginal);
 
-          // Actualizar savedKeysQuim para bloquear la fila
           if (agregarSavedKeyQuim && makeKeyQuim) {
             const key = makeKeyQuim({
               id_inscripcion: rowData.idInscripcion,
-              quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2"
+              quimestre: obtenerEtiquetaQuimestre()
             });
             agregarSavedKeyQuim(key);
           }
 
-          if (onSuccessCallback) onSuccessCallback();
+          onSuccessCallback?.();
         })
         .catch((error) => {
-          Swal.fire({
-            icon: "error",
-            title: "Error al crear ❌.",
-            text: "No se pudo crear la nota del examen.",
-          });
-          if (onErrorCallback) onErrorCallback(error);
-          ErrorMessage(error);
+
+          console.error("❌ [Quimestral] error create:", error);
+
+          if (!esMasivo) {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudo guardar",
+            });
+          }
+
+          onErrorCallback?.(error);
         });
+
       return;
     }
 
-    // Si existe idQuimestral, actualizar el registro existente
+    // 🔹 UPDATE
     const original = datosOriginales[rowIndex];
     const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
 
     if (!haCambiado && !globalEdit) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
-      });
+      console.log("⚠️ [Quimestral] sin cambios");
+
+      onSuccessCallback?.(); // importante en masivo
       return;
     }
 
-    axios
-      .put(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales/${rowData.idQuimestral}`, body)
+    axios.put(`${import.meta.env.VITE_URL_DEL_BACKEND}/quimestrales/${rowData.idQuimestral}`, body)
       .then(() => {
-        Swal.fire({
-          icon: "success",
-          title: "Actualizado",
-          text: "La nota del examen quimestral se actualizó correctamente.",
-        });
+
+        console.log("✅ [Quimestral] actualizado");
+
+        if (!esMasivo) {
+          Swal.fire({
+            icon: "success",
+            title: "Actualizado",
+          });
+        }
+
         const copia = [...datosOriginales];
         copia[rowIndex] = JSON.parse(JSON.stringify(rowData));
         setDatosOriginales(copia);
 
-        // Actualizar savedKeysQuim para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKeyQuim && makeKeyQuim) {
           const key = makeKeyQuim({
             id_inscripcion: rowData.idInscripcion,
-            quimestre: quimestreSeleccionado === "1" ? "Q1" : "Q2"
+            quimestre: obtenerEtiquetaQuimestre()
           });
           agregarSavedKeyQuim(key);
 
-          // Forzar re-render
           setDatos([...datos]);
         }
 
-        // Solo resetear editingRow si el guardado fue exitoso
-        if (onSuccessCallback) onSuccessCallback();
+        onSuccessCallback?.();
       })
       .catch((error) => {
-        Swal.fire({
-          icon: "error",
-          title: "Error al actualizar ❌.",
-          text: "No se pudo actualizar la nota del examen.",
-        });
-        if (onErrorCallback) onErrorCallback(error);
-        ErrorMessage(error);
+
+        console.error("❌ [Quimestral] error update:", error);
+
+        if (!esMasivo) {
+          Swal.fire({
+            icon: "error",
+            title: "Error al actualizar",
+          });
+        }
+
+        onErrorCallback?.(error);
       });
   };
   const handleGuardarAsync = (i, fila) => {
@@ -428,24 +459,27 @@ const Quimestral = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestr
     });
   };
   useEffect(() => {
-    if (onGuardarTodo) {
+    if (activo && onGuardarTodo) {
+      console.log("📌 Registrando handleGuardarTodo desde Quimestral");
       onGuardarTodo(handleGuardarTodo);
     }
-  }, [datos]);
+  }, [activo, datos]);
 
   const handleGuardarTodo = async () => {
+
+
+    // ✅ 2. GUARDADO TOTAL (solo si TODO está correcto)
     let errores = [];
-    let exitos = [];
 
     for (const [i, fila] of datos.entries()) {
       try {
         await handleGuardarAsync(i, fila);
-        exitos.push(i);
       } catch {
         errores.push(i);
       }
     }
 
+    // ✅ 3. RESULTADO FINAL
     if (errores.length === 0) {
       Swal.fire({
         icon: "success",
@@ -453,18 +487,14 @@ const Quimestral = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestr
         text: "Todas las filas se guardaron correctamente ✅",
       });
 
-      // 🔥 AQUÍ
       if (onGuardarTodoFinished) onGuardarTodoFinished();
-
     } else {
       Swal.fire({
         icon: "warning",
-        title: "Guardado parcial",
-        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+        title: "Filas incompletas",
+        text: `Debes completar todas las calificaciones.`,
       });
     }
-    if (onGuardarTodoFinished) onGuardarTodoFinished();
-
   };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idQuimestral) {

@@ -72,7 +72,17 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                   {/* Botón Guardar */}
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => guardarTodoFn?.()}
+                    onClick={() => {
+                      console.log("🟢 Click en guardar");
+                      console.log("📦 guardarTodoFn:", guardarTodoFn);
+
+                      if (!guardarTodoFn) {
+                        console.warn("❌ guardarTodoFn es NULL");
+                        return;
+                      }
+
+                      guardarTodoFn();
+                    }}
                     title="Guardar cambios"
                     disabled={!isEditing}
                   >
@@ -159,6 +169,7 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                       globalEdit={isEditing}
                       key="quimestral-quim1"
                       quimestreSeleccionado="1"
+                      activo={activeMainTab === "quimestre1" && activeSubTabQuim1 === "quimestral-quim1"}
                       parcial1Data={parcial1Quim1Data}
                       parcial2Data={parcial2Quim1Data}
                       actualizarDatosQuim={handleActualizarQuim1}
@@ -239,6 +250,7 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
 
                   <Tab eventKey="quimestral-quim2" title="Quimestre 2">
                     <Quimestral
+                    activo={activeMainTab === "quimestre2" && activeSubTabQuim2 === "quimestral-quim2"}
                       globalEdit={isEditing}
                       key="quimestral-quim2"
                       quimestreSeleccionado="2"
@@ -271,6 +283,7 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
                   <Final
                     globalEdit={isEditing}
                     key="notaFinal"
+                    activo={activeMainTab === "notaFinal"}
                     quim1Data={quim1Data}
                     quim2Data={quim2Data}
                     datosModulo={datosModulo}

@@ -6,7 +6,7 @@ import axios from "axios";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import "../Parcial.css";
 
-const QuimestralBE = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
+const QuimestralBE = ({ activo, onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcial1Data, parcial2Data, actualizarDatosQuim, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeysQuim, makeKeyQuim, agregarSavedKeyQuim, editingRow, setEditingRow }) => {
 
   const idContenedor = `pdf-quimestral-quim${quimestreSeleccionado}`;
 
@@ -513,17 +513,6 @@ const QuimestralBE = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimes
       return;
     }
 
-    const original = datosOriginales[rowIndex];
-    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
-
-    if (!haCambiado && !globalEdit) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
-      });
-      return;
-    }
 
     const examen = parseFloat(rowData["Examen"]);
     if (isNaN(examen) || examen < 0 || examen > 10) {
@@ -584,24 +573,26 @@ const QuimestralBE = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimes
     });
   };
   useEffect(() => {
-    if (onGuardarTodo) {
+    if (activo && onGuardarTodo) {
       onGuardarTodo(handleGuardarTodo);
     }
-  }, [datos]);
+  }, [activo, datos]);
 
   const handleGuardarTodo = async () => {
+
+
+    // ✅ 2. GUARDADO TOTAL (solo si TODO está correcto)
     let errores = [];
-    let exitos = [];
 
     for (const [i, fila] of datos.entries()) {
       try {
         await handleGuardarAsync(i, fila);
-        exitos.push(i);
       } catch {
         errores.push(i);
       }
     }
 
+    // ✅ 3. RESULTADO FINAL
     if (errores.length === 0) {
       Swal.fire({
         icon: "success",
@@ -609,18 +600,14 @@ const QuimestralBE = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimes
         text: "Todas las filas se guardaron correctamente ✅",
       });
 
-      // 🔥 AQUÍ
       if (onGuardarTodoFinished) onGuardarTodoFinished();
-
     } else {
       Swal.fire({
         icon: "warning",
-        title: "Guardado parcial",
-        text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+        title: "Filas incompletas",
+        text: `Debes completar todas las calificaciones.`,
       });
     }
-    if (onGuardarTodoFinished) onGuardarTodoFinished();
-
   };
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idQuimestral) {

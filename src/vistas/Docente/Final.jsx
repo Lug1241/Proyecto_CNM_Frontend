@@ -7,7 +7,7 @@ import { ErrorMessage } from "../../Utils/ErrorMesaje";
 import { calcularPromedioAnual, calcularPromedioComportamientoFinal, calcularPromedioFinalConSupletorio, determinarEstado, calcularValoracionComportamiento, abreviarNivel } from "./Promedios";
 import "./Parcial.css";
 
-const Final = ({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysFinal, makeKeyFinal, agregarSavedKeyFinal, editingRow, setEditingRow }) => {
+const Final = ({ activo,onGuardarTodoFinished, onGuardarTodo, globalEdit, quim1Data, quim2Data, datosModulo, actualizarDatosFinal, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, esPorSolicitud, savedKeysFinal, makeKeyFinal, agregarSavedKeyFinal, editingRow, setEditingRow }) => {
   const [datos, setDatos] = useState([]);
 
   const idContenedor = `pdf-final`;
@@ -476,11 +476,12 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
       handleGuardar(i, fila, resolve, reject);
     });
   };
-  useEffect(() => {
-    if (onGuardarTodo) {
-      onGuardarTodo(handleGuardarTodo);
-    }
-  }, [datos]);
+useEffect(() => {
+  if (activo && onGuardarTodo) {
+    console.log("📌 Registrando handleGuardarTodo desde Final");
+    onGuardarTodo(handleGuardarTodo);
+  }
+}, [activo, datos]);
 
   const handleGuardarTodo = async () => {
     let errores = [];

@@ -6,7 +6,7 @@ import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import Swal from 'sweetalert2';
 import "../Parcial.css";
 
-function ParcialBE({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
+function ParcialBE({activo, onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestreSeleccionado, parcialSeleccionado, actualizarDatosParcial, datosModulo, inputsDisabled, onEditar, isWithinRange, rangoTexto, forceEdit, soloLectura, escala, esPorSolicitud, savedKeys, makeKey, agregarSavedKey, editingRow, setEditingRow }) {
   // ID dinámico: pdf-parcial1-quim1, pdf-parcial2-quim1, pdf-parcial1-quim2, etc.
   const idContenedor = `pdf-parcial-be${parcialSeleccionado}-quim${quimestreSeleccionado}`;
 
@@ -384,7 +384,33 @@ function ParcialBE({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestre
         });
     }
   }, [datosModulo, quimestreSeleccionado, parcialSeleccionado]);
+const validarFilasCompletas = () => {
+  const incompletas = [];
 
+  datos.forEach((fila, index) => {
+    const camposFaltantes = [];
+
+    if (!fila["INSUMO 1"] || fila["INSUMO 1"] === "") {
+      camposFaltantes.push("Insumo 1");
+    }
+    if (!fila["INSUMO 2"] || fila["INSUMO 2"] === "") {
+      camposFaltantes.push("Insumo 2");
+    }
+    if (!fila["EVALUACIÓN SUMATIVA"] || fila["EVALUACIÓN SUMATIVA"] === "") {
+      camposFaltantes.push("Evaluación Sumativa");
+    }
+
+    if (camposFaltantes.length > 0) {
+      incompletas.push({
+        index,
+        nombre: fila["Nómina de Estudiantes"],
+        campos: camposFaltantes
+      });
+    }
+  });
+
+  return incompletas;
+};
   const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     if (!rowData.idParcial) {
       // Si no existe el registro, intentamos crearlo
@@ -475,18 +501,6 @@ function ParcialBE({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestre
       return;
     }
 
-    const original = datosOriginales[rowIndex];
-    const haCambiado = JSON.stringify(rowData) !== JSON.stringify(original);
-
-    if (!haCambiado && !globalEdit) {
-      Swal.fire({
-        icon: "info",
-        title: "Sin cambios",
-        text: "No has realizado ningún cambio en esta fila.",
-      });
-      return;
-    }
-
     const body = {
       id_inscripcion: rowData.idInscripcion,
       insumo1: parseFloat(rowData["INSUMO 1"]),
@@ -535,50 +549,71 @@ function ParcialBE({ onGuardarTodoFinished, onGuardarTodo, globalEdit, quimestre
         if (onErrorCallback) onErrorCallback(error);
       });
   };
-  const handleGuardarAsync = (i, fila) => {
-    return new Promise((resolve, reject) => {
-      handleGuardar(i, fila, resolve, reject);
+const handleGuardarAsync = (i, fila) => {
+  return new Promise((resolve, reject) => {
+    handleGuardar(
+      i,
+      fila,
+      () => resolve(),          // éxito
+      (err) => reject(err)      // error real
+    );
+  });
+};
+ useEffect(() => {
+  if (activo && onGuardarTodo) {
+    console.log("📌 Registrando handleGuardarTodo desde ParcialBE");
+    onGuardarTodo(handleGuardarTodo);
+  }
+}, [activo, datos]);
+
+ const handleGuardarTodo = async () => {
+  // 🔥 VALIDACIÓN GLOBAL PRIMERO
+  const incompletas = validarFilasCompletas();
+
+  if (incompletas.length > 0) {
+    const lista = incompletas
+      .map(f => `• ${f.nombre}`)
+      .join("\n");
+
+    Swal.fire({
+      icon: "warning",
+      title: "Filas incompletas",
+      text: `Debes completar todas las calificaciones.`,
     });
-  };
-  useEffect(() => {
-    if (onGuardarTodo) {
-      onGuardarTodo(handleGuardarTodo);
+
+    return; // ❌ NO guarda nada
+  }
+
+  // ✅ SI TODO ESTÁ BIEN → guarda
+  let errores = [];
+  let exitos = [];
+
+  for (const [i, fila] of datos.entries()) {
+    try {
+      await handleGuardarAsync(i, fila);
+      exitos.push(i);
+    } catch {
+      errores.push(i);
     }
-  }, [datos]);
+  }
 
-  const handleGuardarTodo = async () => {
-    let errores = [];
-    let exitos = [];
-
-    for (const [i, fila] of datos.entries()) {
-      try {
-        await handleGuardarAsync(i, fila);
-        exitos.push(i);
-      } catch {
-        errores.push(i);
-      }
-    }
-
-    if (errores.length === 0) {
-      Swal.fire({
+  if (errores.length === 0) {
+    Swal.fire({
       icon: "success",
       title: "Guardado completo",
       text: "Todas las filas se guardaron correctamente ✅",
     });
 
-    // 🔥 AQUÍ
     if (onGuardarTodoFinished) onGuardarTodoFinished();
 
   } else {
     Swal.fire({
       icon: "warning",
       title: "Guardado parcial",
-      text: `Se guardaron ${exitos.length} filas, pero ${errores.length} estan incompletas.`,
+      text: `Se guardaron ${exitos.length} filas, pero ${errores.length} fallaron.`,
     });
-    }
-    if (onGuardarTodoFinished) onGuardarTodoFinished();
-
-  };
+  }
+};
   const handleEliminar = (rowIndex, rowData) => {
     if (!rowData.idParcial) {
       Swal.fire({

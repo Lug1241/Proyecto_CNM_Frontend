@@ -56,10 +56,19 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
                     <i className="bi bi-pencil-fill"></i>
                   </button>
 
-                  {/* Botón Guardar */}
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => guardarTodoFn?.()}
+                    onClick={() => {
+                      console.log("🟢 Click en guardar");
+                      console.log("📦 guardarTodoFn:", guardarTodoFn);
+
+                      if (!guardarTodoFn) {
+                        console.warn("❌ guardarTodoFn es NULL");
+                        return;
+                      }
+
+                      guardarTodoFn();
+                    }}
                     title="Guardar cambios"
                     disabled={!isEditing}
                   >
@@ -158,6 +167,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
 
                   <Tab eventKey="quimestral-quim1" title="Quimestre 1">
                     <Quimestral
+                    activo={activeMainTab === "quimestre1" && activeSubTabQuim1 === "quimestral-quim1"}
                       globalEdit={isEditing}
                       key="quimestral-quim1-be"
                       quimestreSeleccionado="1"
@@ -244,6 +254,7 @@ function NotasBE({ usuario, modules, datosModulo, handleSidebarNavigation, handl
 
                   <Tab eventKey="quimestral-quim2" title="Quimestre 2">
                     <Quimestral
+                      activo={activeMainTab === "quimestre2" && activeSubTabQuim2 === "quimestral-quim2"}
                       globalEdit={isEditing}
                       key="quimestral-quim2-be"
                       quimestreSeleccionado="2"
