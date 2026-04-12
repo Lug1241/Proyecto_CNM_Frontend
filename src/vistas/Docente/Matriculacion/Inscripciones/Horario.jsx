@@ -1,12 +1,17 @@
-import { Table } from "react-bootstrap";
+import { useState } from "react";
+import { Table, Button } from "react-bootstrap";
+import Swal from "sweetalert2";
+import axios from "axios";
 import '../../../Admin/Styles/Horario.css'
 
 
 const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
-const Horario = ({ materiasSeleccionadas, jornada, nivel }) => {
+const Horario = ({ materiasSeleccionadas, setMateriasSeleccionadas, jornada, nivel, setAsignaciones, docente }) => {
 
-    console.log("materiasSeleccionadas", materiasSeleccionadas);
+    const API_URL = import.meta.env.VITE_URL_DEL_BACKEND;
+    const token = localStorage.getItem("token");
+
     const horasMatutina = [
         "07:00 - 07:45",
         "07:45 - 08:30",
@@ -45,6 +50,38 @@ const Horario = ({ materiasSeleccionadas, jornada, nivel }) => {
         ]
     }
 
+    const eliminarMateria = (inscripcion) => {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Va a eliminar una inscripción`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.delete(`${API_URL}/inscripcion/eliminar/${inscripcion.ID}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }).then(() => {
+                    if (setAsignaciones) {
+                        setAsignaciones((prevData) =>
+                            prevData.map((item) =>
+                                item.ID === inscripcion.Asignacion.ID
+                                    ? { ...item, cupos: item.cupos + 1 }
+                                    : item
+                            )
+                        );
+                    }
+
+                    setMateriasSeleccionadas((prevData) =>
+                        prevData.filter((d) => d.Asignacion && d.Asignacion.ID !== inscripcion.Asignacion.ID)
+                    );
+                });
+            }
+        });
+    };
 
 
 
@@ -125,6 +162,16 @@ const Horario = ({ materiasSeleccionadas, jornada, nivel }) => {
                                         {inscripcion ? (
                                             <div className="horario-materia-container">
                                                 <span className="horario-materia-nombre">{inscripcion.Asignacion.Materia.nombre}</span>
+                                                {(inscripcion.Asignacion.nroCedula_docente === docente?.nroCedula) && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline-danger"
+                                                        className="horario-boton"
+                                                        onClick={() => eliminarMateria(inscripcion)}
+                                                    >
+                                                        ✖
+                                                    </Button>
+                                                )}
                                             </div>
                                         ) : (
                                             "-"

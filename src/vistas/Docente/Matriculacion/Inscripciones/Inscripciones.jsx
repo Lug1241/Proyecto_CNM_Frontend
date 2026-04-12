@@ -336,26 +336,28 @@ function Inscripciones({ asignaciones, docente, periodo, setAsignaciones }) {
                         <div className="gcd-card-title me-2">
                           {asig.Materia?.nombre}
                         </div>
-                        <div className="d-flex gap-2">
-                          <FaEdit
-                            size={16}
-                            style={{ cursor: "pointer", color: "#007bff" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditar(asig);
-                            }}
-                            title="Editar"
-                          />
-                          <FaTrash
-                            size={16}
-                            style={{ cursor: "pointer", color: "#dc3545" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEliminar(asig);
-                            }}
-                            title="Eliminar"
-                          />
-                        </div>
+                        {asig.nroCedula_docente === docente.nroCedula && (
+                          <div className="d-flex gap-2">
+                            <FaEdit
+                              size={16}
+                              style={{ cursor: "pointer", color: "#007bff" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditar(asig);
+                              }}
+                              title="Editar"
+                            />
+                            <FaTrash
+                              size={16}
+                              style={{ cursor: "pointer", color: "#dc3545" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEliminar(asig);
+                              }}
+                              title="Eliminar"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <Row style={{ fontSize: "0.85rem" }}>
@@ -414,6 +416,8 @@ function Inscripciones({ asignaciones, docente, periodo, setAsignaciones }) {
               setMateriasSeleccionadas={setInscripciones}
               jornada={estudiante.jornada}
               nivel={estudiante.nivel}
+              setAsignaciones={setAsignaciones}
+              docente={docente}
             />
           </div>
         )}
