@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import { ErrorMessage } from "../../../../Utils/ErrorMesaje";
 import { useLocation } from "react-router-dom";
 import { Card, Row, Col } from "react-bootstrap";
-import Horario from "./Horario";
+import Horario from "../../../Admin/Modules/Matriculacion/Horario";
 import { useNavigate } from "react-router-dom";
 import CrearCursoIndividual from "../CrearCursoIndividual";
 import "../../../components/BuscarEstudiante.css";
