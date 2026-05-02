@@ -83,15 +83,30 @@ export function calcularValoracionComportamiento(valor) {
 export function abreviarNivel(nivel) {
   if (!nivel || typeof nivel !== "string") return "";
 
-  const partes = nivel.split(" ");
-  if (partes.length < 2) return "";
+  // Normalizar: quitar acentos, pasar a minúsculas y colapsar espacios
+  const norm = nivel
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
 
-  const grado = partes[0][0]; // Ej. "1ro" => "1"
+  // Extraer grado (número al inicio o primer dígito que aparezca)
+  let grado = "";
+  const inicioNum = norm.match(/^(\d+)/);
+  if (inicioNum) {
+    grado = inicioNum[1];
+  } else {
+    const anyDigit = norm.match(/(\d)/);
+    if (anyDigit) grado = anyDigit[1];
+  }
 
-  if (nivel.includes("Bachillerato")) return `${grado}BCH`;
-  if (nivel.includes("Básico Elemental")) return `${grado}BE`;
-  if (nivel.includes("Básico Medio")) return `${grado}BM`;
-  if (nivel.includes("Básico Superior")) return `${grado}BS`;
+  if (!grado) return "";
 
-  return ""; // Por defecto si no matchea nada
+  if (norm.includes('bachiller')) return `${grado}BCH`;
+  if (norm.includes('basico elemental') || norm.includes('basicoelemental')) return `${grado}BE`;
+  if (norm.includes('basico medio') || norm.includes('basicomedio')) return `${grado}BM`;
+  if (norm.includes('basico superior') || norm.includes('basicosuperior')) return `${grado}BS`;
+
+  return "";
 }
