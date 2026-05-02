@@ -83,23 +83,15 @@ export function calcularValoracionComportamiento(valor) {
 export function abreviarNivel(nivel) {
   if (!nivel || typeof nivel !== "string") return "";
 
-  const limpio = nivel.trim();
-  if (!limpio) return "";
+  const partes = nivel.split(" ");
+  if (partes.length < 2) return "";
 
-  const normalizado = limpio
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ");
+  const grado = partes[0][0]; // Ej. "1ro" => "1"
 
-  const gradoMatch = normalizado.match(/^(\d+)/);
-  if (!gradoMatch) return "";
-  const grado = gradoMatch[1];
+  if (nivel.includes("Bachillerato")) return `${grado}BCH`;
+  if (nivel.includes("Básico Elemental")) return `${grado}BE`;
+  if (nivel.includes("Básico Medio")) return `${grado}BM`;
+  if (nivel.includes("Básico Superior")) return `${grado}BS`;
 
-  if (normalizado.includes("bachillerato")) return `${grado}BCH`;
-  if (normalizado.includes("basico elemental")) return `${grado}BE`;
-  if (normalizado.includes("basico medio")) return `${grado}BM`;
-  if (normalizado.includes("basico superior")) return `${grado}BS`;
-
-  return "";
+  return ""; // Por defecto si no matchea nada
 }
