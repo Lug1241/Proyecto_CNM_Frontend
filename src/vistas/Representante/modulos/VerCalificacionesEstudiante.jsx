@@ -79,7 +79,7 @@ const VerCalificacionesEstudiante = () => {
           ID_inscripcion: inscripcion.ID,
           ID_asignacion: inscripcion.ID_asignacion,
           nombreMateria: inscripcion.Asignacion.Materia.nombre,
-          nivel: inscripcion.Asignacion.Materia.nivel
+          nivel: inscripcion.Matricula.nivel
         };
       })
       
