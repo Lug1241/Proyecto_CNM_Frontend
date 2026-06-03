@@ -68,7 +68,7 @@ function MateriasIndividuales() {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/docente/obtener`, {
+      .get(`${API_URL}/docente/obtener?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
