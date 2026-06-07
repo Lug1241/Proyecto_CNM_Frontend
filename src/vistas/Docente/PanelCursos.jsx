@@ -91,7 +91,16 @@ function PanelCursos() {
                     const nombreMateria = curso.materia || "Sin materia";
                     const tipoNivel = esNivelBE(curso.nivel) ? "BE" : "Superior";
                     const tipoCurso = curso.tipo || "grupal";
-                    const key = `${normalizarTexto(nombreMateria)}_${tipoNivel}_${tipoCurso}`;
+                    
+                    // 1. Generamos la llave base por defecto
+                    let key = `${normalizarTexto(nombreMateria)}_${tipoNivel}_${tipoCurso}`;
+
+                    // 2. 🟢 MODIFICACIÓN AQUÍ: Si el tipo es grupal, alteramos la key para que sea única por paralelo
+                    if (tipoCurso.toLowerCase() === "grupal") {
+                      // Usamos curso.id, curso.id_asignacion o curso.paralelo como identificador único
+                      const identificadorUnico = curso.id || curso.id_asignacion || curso.paralelo || Math.random();
+                      key = `${key}_${identificadorUnico}`;
+                    }
 
                     if (!acc[key]) {
                       acc[key] = {
@@ -119,7 +128,8 @@ function PanelCursos() {
 
                   setCursos(cursosAgrupados);
                 }
-              })
+              }
+            )
               .catch((error) => {
                 // ❌ Errores reales (401, 500, etc.)
                 ErrorMessage(error);
