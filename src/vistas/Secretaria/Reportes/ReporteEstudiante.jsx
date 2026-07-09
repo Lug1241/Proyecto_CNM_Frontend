@@ -49,7 +49,7 @@ function ReporteEstudiante() {
     setModules(transformModulesForLayout(getModulos(u.subRol, true)));
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    const fetchNotas = async () => {
+ const fetchNotas = async () => {
       try {
         const { data: inscData } = await axios.get(
           `${import.meta.env.VITE_URL_DEL_BACKEND}/inscripcion/obtener/matricula/${estudiante.idMatricula}`
@@ -105,9 +105,15 @@ function ReporteEstudiante() {
               insc.ID
             );
 
-            const obtenerEstado = (n) => {
-              if (n >= 7) return "Aprobado";
-              if (n >= 4) return "Supletorio";
+            // Buscamos si existe un registro de supletorio guardado para esta inscripción específica
+            const supletorioGuardado = finales.find(f => f.idInscripcion === insc.ID);
+            const tieneSupletorio = supletorioGuardado?.examenRecuperacion ?? supletorioGuardado?.examen_recuperacion ?? "";
+
+            const obtenerEstadoDinamico = (nota, supletorio) => {
+              if (nota >= 7) return "Aprobado";
+              // Si tiene un supletorio registrado pero la nota final sigue siendo menor a 7, significa que reprobó el supletorio
+              if (supletorio !== "") return "Reprobado"; 
+              if (nota >= 4) return "Supletorio";
               return "Reprobado";
             };
 
@@ -115,7 +121,7 @@ function ReporteEstudiante() {
               Asignatura: insc.Asignacion?.Materia?.nombre || "—",
               "Promedio Final": promedioFinal?.toFixed(2) || "—",
               "Calificación Cualitativa": promedioFinal
-                ? obtenerEstado(promedioFinal)
+                ? obtenerEstadoDinamico(promedioFinal, tieneSupletorio)
                 : "—",
             });
 
