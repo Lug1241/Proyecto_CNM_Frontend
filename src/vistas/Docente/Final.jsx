@@ -338,48 +338,68 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
     return inputsDisabled;
   };
 
-  const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
-    // Validar que el examen supletorio tenga valor si es necesario
+const handleGuardar = (rowIndex, rowData, onSuccessCallback, onErrorCallback) => {
     const promedioAnual = parseFloat(rowData._promedioAnual);
-    if (promedioAnual < 7 && (!rowData["Examen Supletorio"] || rowData["Examen Supletorio"] === "")) {
+    
+    // Determinamos si el estudiante realmente necesita supletorio (rango >= 4 y < 7)
+    const requiereSupletorio = promedioAnual >= 4 && promedioAnual < 7;
+    const supletorioIngresado = rowData["Examen Supletorio"] !== null && rowData["Examen Supletorio"] !== undefined && rowData["Examen Supletorio"] !== "";
+
+    // 1. Validar que la nota esté ingresada SOLO si el estudiante la requiere
+    if (requiereSupletorio && !supletorioIngresado) {
       Swal.fire({
         icon: "warning",
         title: "Faltan datos",
-        text: "Este estudiante requiere examen supletorio. Debes ingresar la nota antes de guardar.",
+        text: `El estudiante ${rowData["Nómina de Estudiantes"]} requiere examen supletorio. Debes ingresar la nota antes de guardar.`,
         confirmButtonText: "OK"
       });
       if (onErrorCallback) onErrorCallback("validacion");
       return;
     }
 
+    // 2. Si es guardado global, el estudiante no requiere supletorio y la celda está vacía,
+    // simplemente lo saltamos y lo damos por exitoso para no enviar peticiones innecesarias al backend.
+    if (!requiereSupletorio && !supletorioIngresado && globalEdit) {
+      if (onSuccessCallback) onSuccessCallback();
+      return;
+    }
+
+    // 3. Evaluar si ha cambiado respecto a los datos originales
     const original = datosOriginales[rowIndex];
     const haCambiado =
       parseFloat(rowData["Examen Supletorio"] || 0).toFixed(2) !==
       parseFloat(original["Examen Supletorio"] || 0).toFixed(2);
 
     if (!haCambiado && !globalEdit) {
-      console.log("este es el valor de globalEdit", globalEdit);
       Swal.fire({
         icon: "info",
         title: "Sin cambios",
         text: "No has realizado ningún cambio en esta fila.",
       });
+      // Importante ejecutar el callback aquí para que no se quede colgada la UI al dar clic individual
+      if (onSuccessCallback) onSuccessCallback(); 
       return;
     }
 
-    const examen = parseFloat(rowData["Examen Supletorio"]);
-    if (isNaN(examen) || examen < 0 || examen > 10) {
-      Swal.fire({
-        icon: "error",
-        title: "Valor inválido",
-        text: "La nota del examen supletorio debe estar entre 0.00 y 10.00.",
-      });
-      return;
+    // 4. Validar que el valor sea un número correcto, SOLO si se ha ingresado algo
+    let examen = "";
+    if (supletorioIngresado) {
+      examen = parseFloat(rowData["Examen Supletorio"]);
+      if (isNaN(examen) || examen < 0 || examen > 10) {
+        Swal.fire({
+          icon: "error",
+          title: "Valor inválido",
+          text: `La nota del examen supletorio para ${rowData["Nómina de Estudiantes"]} debe estar entre 0.00 y 10.00.`,
+        });
+        if (onErrorCallback) onErrorCallback("valor_invalido");
+        return;
+      }
     }
 
+    // Preparar el cuerpo de la petición. Si no hay nota, se envía vacío para mantener la integridad de la BD.
     const body = {
       id_inscripcion: rowData.idInscripcion,
-      examen_recuperacion: examen,
+      examen_recuperacion: supletorioIngresado ? examen : "",
     };
 
     // Si no existe idFinal, crear el registro; si existe, actualizarlo
@@ -394,19 +414,22 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
     axiosRequest
       .then((response) => {
         const isCreate = !rowData.idFinal;
-        Swal.fire({
-          icon: "success",
-          title: isCreate ? "Creado" : "Actualizado",
-          text: isCreate
-            ? "La nota del examen supletorio se creó correctamente."
-            : "La nota del examen supletorio se actualizó correctamente.",
-        });
+        
+        // No mostrar la alerta individual si se está realizando un guardado global
+        if (!globalEdit) {
+          Swal.fire({
+            icon: "success",
+            title: isCreate ? "Creado" : "Actualizado",
+            text: isCreate
+              ? "La nota del examen supletorio se creó correctamente."
+              : "La nota del examen supletorio se actualizó correctamente.",
+          });
+        }
 
         // 👉 Recalcular estado y promedio
-        const promedioFinalRecalculado = calcularPromedioFinalConSupletorio(rowData._promedioAnual, examen);
-        const estadoFinal = determinarEstado(promedioFinalRecalculado, true);
+        const promedioFinalRecalculado = calcularPromedioFinalConSupletorio(rowData._promedioAnual, supletorioIngresado ? examen : "");
+        const estadoFinal = determinarEstado(promedioFinalRecalculado, supletorioIngresado);
 
-        // Obtener el idFinal (nuevo si se creó, mismo si se actualizó)
         const nuevoIdFinal = isCreate
           ? (response.data?.ID || response.data?.id || rowData.idFinal)
           : rowData.idFinal;
@@ -415,7 +438,7 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
         nuevaCopia[rowIndex] = {
           ...rowData,
           idFinal: nuevoIdFinal,
-          "Examen Supletorio": examen.toFixed(2),
+          "Examen Supletorio": supletorioIngresado ? examen.toFixed(2) : "",
           _promedioFinal: promedioFinalRecalculado,
           "Promedio Final": promedioFinalRecalculado.toFixed(2),
           "Estado": estadoFinal,
@@ -426,30 +449,25 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
         nuevosOriginales[rowIndex] = {
           ...rowData,
           idFinal: nuevoIdFinal,
-          "Examen Supletorio": examen.toFixed(2),
+          "Examen Supletorio": supletorioIngresado ? examen.toFixed(2) : "",
           _promedioFinal: promedioFinalRecalculado,
           "Promedio Final": promedioFinalRecalculado.toFixed(2),
           "Estado": estadoFinal,
         };
         setDatosOriginales(nuevosOriginales);
 
-        // Actualizar savedKeysFinal para bloquear la fila inmediatamente sin recargar
         if (agregarSavedKeyFinal && makeKeyFinal) {
           const key = makeKeyFinal({ id_inscripcion: rowData.idInscripcion });
           agregarSavedKeyFinal(key);
-
-          // Forzar re-render
           setDatos([...nuevaCopia]);
         }
 
-        // Solo resetear editingRow si el guardado fue exitoso
         if (onSuccessCallback) onSuccessCallback();
       })
       .catch((error) => {
         let mensajeError = "No se pudo guardar el examen supletorio.";
 
         if (error.response) {
-          // El servidor respondió con un código de error
           if (error.response.status === 404) {
             mensajeError = "Registro no encontrado en el servidor.";
           } else if (error.response.status === 400) {
@@ -469,6 +487,7 @@ console.log("este es el valor de globalEdit en Final.jsx", globalEdit);
           text: mensajeError,
         });
         ErrorMessage(error);
+        if (onErrorCallback) onErrorCallback("servidor");
       });
   };
   const handleGuardarAsync = (i, fila) => {
