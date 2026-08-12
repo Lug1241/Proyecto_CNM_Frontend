@@ -24,6 +24,7 @@ function ReporteEstudiante() {
   const [usuario, setUsuario] = useState(null);
   const [modules, setModules] = useState([]);
   const [tabActiva, setTabActiva] = useState("q1");
+  const [nivelHistorico, setNivelHistorico] = useState(estudiante?.nivel || "");
 
   // ---- ref para el certificado completo ----
   const certificadoRef = useRef(null);
@@ -49,12 +50,19 @@ function ReporteEstudiante() {
     setModules(transformModulesForLayout(getModulos(u.subRol, true)));
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
- const fetchNotas = async () => {
+    const fetchNotas = async () => {
       try {
         const { data: inscData } = await axios.get(
           `${import.meta.env.VITE_URL_DEL_BACKEND}/inscripcion/obtener/matricula/${estudiante.idMatricula}`
         );
+        if (inscData.length > 0) {
+          // Ajusta esta ruta según la estructura exacta de tu JSON del backend
+          const matriculaInfo = inscData[0]?.Matricula;
+          if (matriculaInfo) {
+            setNivelHistorico(matriculaInfo.nivel);
 
+          }
+        }
         const resultados = [];
         const resultadosQuim = [];
         for (const insc of inscData) {
@@ -112,7 +120,7 @@ function ReporteEstudiante() {
             const obtenerEstadoDinamico = (nota, supletorio) => {
               if (nota >= 7) return "Aprobado";
               // Si tiene un supletorio registrado pero la nota final sigue siendo menor a 7, significa que reprobó el supletorio
-              if (supletorio !== "") return "Reprobado"; 
+              if (supletorio !== "") return "Reprobado";
               if (nota >= 4) return "Supletorio";
               return "Reprobado";
             };
@@ -156,7 +164,7 @@ function ReporteEstudiante() {
     info: {
       Estudiante: estudiante.nombre,
       Cédula: estudiante.cedula,
-      Nivel: estudiante.nivel,
+      Nivel: nivelHistorico,
       "Año Lectivo": estudiante.anioLectivo,
     },
   };
@@ -165,77 +173,77 @@ function ReporteEstudiante() {
 
   // ---- Exportar a PDF ----
   const handleExportPDF = async () => {
-  if (!certificadoRef.current) return;
+    if (!certificadoRef.current) return;
 
-  try {
-    // 1) Clonar el certificado y renderizarlo en un contenedor oculto
-    const original = certificadoRef.current;
-    const clonedContent = original.cloneNode(true);
-    const tempContainer = document.createElement("div");
+    try {
+      // 1) Clonar el certificado y renderizarlo en un contenedor oculto
+      const original = certificadoRef.current;
+      const clonedContent = original.cloneNode(true);
+      const tempContainer = document.createElement("div");
 
-    const renderWidth = 1000;   // ancho fijo para la captura
-    const renderScale = 3;      // calidad
+      const renderWidth = 1000;   // ancho fijo para la captura
+      const renderScale = 3;      // calidad
 
-    tempContainer.style.width = `${renderWidth}px`;
-    tempContainer.style.position = "absolute";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "-9999px";
-    tempContainer.style.background = "#ffffff";
+      tempContainer.style.width = `${renderWidth}px`;
+      tempContainer.style.position = "absolute";
+      tempContainer.style.left = "-9999px";
+      tempContainer.style.top = "-9999px";
+      tempContainer.style.background = "#ffffff";
 
-    document.body.appendChild(tempContainer);
-    tempContainer.appendChild(clonedContent);
+      document.body.appendChild(tempContainer);
+      tempContainer.appendChild(clonedContent);
 
-    // Aseguramos que el clon use todo el ancho del contenedor fijo
-    clonedContent.style.width = "100%";
-    clonedContent.style.boxSizing = "border-box";
+      // Aseguramos que el clon use todo el ancho del contenedor fijo
+      clonedContent.style.width = "100%";
+      clonedContent.style.boxSizing = "border-box";
 
-    // pequeña pausa para que el navegador pinte estilos
-    await new Promise((resolve) => setTimeout(resolve, 200));
+      // pequeña pausa para que el navegador pinte estilos
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // 2) Captura con html2canvas sobre el CLON, con tamaño controlado
-    const canvas = await html2canvas(clonedContent, {
-      scale: renderScale,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: renderWidth,
-      width: renderWidth,
-      scrollX: 0,
-      scrollY: 0,
-    });
+      // 2) Captura con html2canvas sobre el CLON, con tamaño controlado
+      const canvas = await html2canvas(clonedContent, {
+        scale: renderScale,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: renderWidth,
+        width: renderWidth,
+        scrollX: 0,
+        scrollY: 0,
+      });
 
-    // limpiamos el DOM temporal
-    document.body.removeChild(tempContainer);
+      // limpiamos el DOM temporal
+      document.body.removeChild(tempContainer);
 
-    // 3) Generar PDF A4 vertical con tamaño estable
-    const imgData = canvas.toDataURL("image/png");
+      // 3) Generar PDF A4 vertical con tamaño estable
+      const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth  = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-    const marginX  = 20;
-    const marginTop = 25;
+      const marginX = 20;
+      const marginTop = 25;
 
-    const maxWidth = pageWidth - marginX * 2;
-    let imgWidth = maxWidth;
-    let imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const maxWidth = pageWidth - marginX * 2;
+      let imgWidth = maxWidth;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // si algún día se pasa mucho en alto, lo recortamos un poco
-    if (imgHeight > pageHeight - marginTop * 2) {
-      imgHeight = pageHeight - marginTop * 2;
-      imgWidth = (canvas.width * imgHeight) / canvas.height;
+      // si algún día se pasa mucho en alto, lo recortamos un poco
+      if (imgHeight > pageHeight - marginTop * 2) {
+        imgHeight = pageHeight - marginTop * 2;
+        imgWidth = (canvas.width * imgHeight) / canvas.height;
+      }
+
+      const x = (pageWidth - imgWidth) / 2;
+      const y = marginTop;
+
+      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+      pdf.save(`Certificado-${estudiante?.nombre || "estudiante"}.pdf`);
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "No se pudo generar el PDF.", "error");
     }
-
-    const x = (pageWidth - imgWidth) / 2;
-    const y = marginTop;
-
-    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-    pdf.save(`Certificado-${estudiante?.nombre || "estudiante"}.pdf`);
-  } catch (error) {
-    console.error(error);
-    Swal.fire("Error", "No se pudo generar el PDF.", "error");
-  }
-};
+  };
 
   return (
     <>

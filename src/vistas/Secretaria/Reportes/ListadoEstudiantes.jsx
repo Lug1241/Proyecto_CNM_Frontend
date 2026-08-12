@@ -66,7 +66,7 @@ function ListadoEstudiantes() {
         }
 
         axios
-            .get(`${import.meta.env.VITE_URL_DEL_BACKEND}/estudiante/nivel/${nivelesMap[nivel]}`, {
+            .get(`${import.meta.env.VITE_URL_DEL_BACKEND}/estudiante/matricula/${nivelesMap[nivel]}/periodo/${idPeriodo}`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((res) => {
@@ -114,7 +114,7 @@ function ListadoEstudiantes() {
             }
 
 
-            const esBE = est.nivel?.toLowerCase().includes("elemental");
+            const esBE = ultimaMatricula.nivel?.toLowerCase().includes("elemental");
 
             navigate(`/secretaria/reportes/estudiante/${est.ID}`, {
                 state: {
@@ -123,7 +123,7 @@ function ListadoEstudiantes() {
                         nombre: `${est.primer_apellido} ${est.segundo_apellido || ""} ${est.primer_nombre} ${est.segundo_nombre || ""}`,
                         cedula: est.nroCedula,
                         idMatricula: ultimaMatricula.ID,
-                        nivel: est.nivel,
+                        nivel: ultimaMatricula.nivel,
                         anioLectivo: descripcionPeriodoFromState,
                     },
                     esBE,
@@ -134,13 +134,6 @@ function ListadoEstudiantes() {
             ErrorMessage(error);
         }
     };
-
-    const handleResumenGeneral = () => {
-        navigate(`/secretaria/reportes/resumen/${nivel}`, {
-            state: { idPeriodo, nivel },
-        });
-    };
-
     if (loading) return <Loading />;
 
     return (
