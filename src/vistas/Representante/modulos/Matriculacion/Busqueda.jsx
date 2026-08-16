@@ -398,7 +398,7 @@ function Busqueda({usuario}) {
                         onClick={handleCancelarMatricula}
                         title="Cancelar y volver a la lista de estudiantes"
                     >
-                        <i className="bi bi-x-circle"></i> Cancelar matrícula
+                        <i className="bi bi-x-circle"></i> Finalizar matrícula
                     </button>
                 </div>
             )}

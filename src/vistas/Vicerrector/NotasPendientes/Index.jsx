@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import Solicitudes from './Solicitudes.jsx'
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../../layout/Layout.jsx';
 import Header from '../../../components/Header.jsx';
-import { ObtenerTodo } from '../../../Utils/CRUD/ObjetenerTodo.jsx';
 import Loading from '../../../components/Loading.jsx';
 import { getModulos, transformModulesForLayout } from '../../getModulos.jsx';
 import { useAuth } from '../../../Utils/useAuth';
 import { ErrorMessage } from '../../../Utils/ErrorMesaje';
+import NotasPendientes from '../NotasPendientes/NotasPendientes.jsx';
 
 function Index() {
   // Protección de ruta para Vicerrector
@@ -15,7 +14,6 @@ function Index() {
   
   const [usuario, setUsuario] = useState(null);
   const [modules, setModules] = useState([]);
-  const [solicitudes, setSolicitudes] = useState([])
   const [loading, setLoading] = useState(false)
 
   const API_URL = import.meta.env.VITE_URL_DEL_BACKEND;
@@ -33,9 +31,8 @@ function Index() {
   }, [API_URL, navigate]);
   
   useEffect(() => {
-    ObtenerTodo(setSolicitudes, `${API_URL}/solicitud/obtener`, setLoading)
+    
   }, [])
-  //const pendientes = solicitudes.filter(s => s.estado === "Pendiente");
   
    if (!auth.isAuthenticated) {
     return <ErrorMessage message="No tienes permisos para acceder a esta página" />;
@@ -52,7 +49,7 @@ function Index() {
         {usuario && <Header isAuthenticated={true} usuario={usuario} />}
       </div>
       <Layout modules={modules} onNavigate={handleSidebarNavigation}>
-        {loading ? <Loading /> : <Solicitudes solicitudes={solicitudes} setSolicitudes={setSolicitudes} />}
+        {loading ? <Loading /> : <NotasPendientes  />}
       </Layout>
     </div>
   )

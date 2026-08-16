@@ -22,6 +22,7 @@ export const getModulos = (subRol, includeInicio = false) => {
           { id: 5, titulo: "Calificaciones", icono: "📊", link: "/vicerrector/panelcursos"},
           { id: 6, titulo: "Matriculacion materias grupales", icono: "✏️", link: "/admin/matriculacion"},
           { id: 7, titulo: "Matriculación individual", icono: "✏️", link: "/profesor/matricula"},
+          { id: 8, titulo: "Notas pendientes", icono: "📋", link: "/vicerrector/notas-pendientes"}
         ];
         break;
       case "Secretaria":

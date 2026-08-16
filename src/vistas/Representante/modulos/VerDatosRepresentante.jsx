@@ -12,11 +12,12 @@ import "../Styles/VerDatosRepresentante.css";
 import Swal from 'sweetalert2';
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import { useAuth } from '../../../Utils/useAuth';
+import FileUploader from '../../../vistas/components/FileUploader.jsx';
 
 const VerDatosRepresentante = () => {
   // Protección de ruta para Representante
   const auth = useAuth("representante");
-  
+
   // Si no está autenticado, mostrar mensaje de error
   if (!auth.isAuthenticated) {
     return <ErrorMessage message="No tienes permisos para acceder a esta página" />;
@@ -80,49 +81,57 @@ const VerDatosRepresentante = () => {
   const cargarDatosRepresentante = async () => {
     try {
       setIsLoading(true);
-      const usuarioGuardado = localStorage.getItem("usuario");
-      if (usuarioGuardado) {
-        setRepresentante(JSON.parse(usuarioGuardado));
-      }
       const token = localStorage.getItem("token");
       const baseURL = import.meta.env.VITE_URL_DEL_BACKEND;
       const headers = {
         headers: {
           Authorization: `Bearer ${token}`
         }
+      };
+
+      // 1. Saber quién es el usuario desde el localStorage
+      const usuarioGuardado = localStorage.getItem("usuario");
+      let idRepresentante = null;
+
+      if (usuarioGuardado) {
+        const userCache = JSON.parse(usuarioGuardado);
+        setRepresentante(userCache); // Lo ponemos temporalmente para que la pantalla no se vea vacía
+        idRepresentante = userCache.nroCedula; // O el campo que uses como ID (ej. userCache.ID)
       }
 
-      // Obtener la fecha actual del servidor
-      const { data: response } = await axios.get(
-        `${baseURL}/fechas_procesos/fecha_actual`,
+      // 2. 👇 AQUÍ ESTÁ LA MAGIA: Traer los datos FRESCOS de la base de datos
+      if (idRepresentante) {
+        try {
+            // Asegúrate de que esta ruta coincida con tu endpoint del backend para obtener 1 representante
+            const { data: representanteFresco } = await axios.get(`${baseURL}/representante/obtener/${idRepresentante}`, headers);
+            
+            setRepresentante(representanteFresco); // 👈 Ahora sí, React tiene las rutas de los PDF actualizadas
+            
+            // Opcional: Actualizamos la "foto" del localStorage por si acaso
+            localStorage.setItem("usuario", JSON.stringify(representanteFresco));
+        } catch (error) {
+            console.error("No se pudo obtener la info fresca de la BD:", error);
+        }
+      }
+
+      // 3. Obtener la fecha actual del servidor (Tu código original)
+      const { data: response } = await axios.get(`${baseURL}/fechas_procesos/fecha_actual`, headers);
+      
+      // ... El resto de tu código de las fechas (procesoActivo, etc.) sigue igualito abajo ...
+      const { data: fechaActualizacionDatos } = await axios.get(
+        `${baseURL}/fechas_procesos/actualizacion`,
         headers
       );
-      const fechaActual = response.fechaActual;
 
-      let inicio = null;
-      let fin = null;
+      const { procesoActivo, fechaInicioProceso, fechaFinProceso } = fechaActualizacionDatos;
 
-      // Obtener las fechas rango de la API para la actualizacion
-      try {
-        const { data: fechaActualizacionDatos } = await axios.get(
-          `${baseURL}/fechas_procesos/actualizacion`,
-          headers
-        );
-
-        const { procesoActivo, fechaInicioProceso, fechaFinProceso } = fechaActualizacionDatos;
-
-        setFechaInicio(fechaInicioProceso);
-        setFechaFin(fechaFinProceso);
-        setDentroDeRango(procesoActivo);
-      } catch (error) {
-        setDentroDeRango(false);
-        setFechaInicio(null);
-        setFechaFin(null);
-        console.info("No hay proceso de actualización configurado.");
-      }
+      setFechaInicio(fechaInicioProceso);
+      setFechaFin(fechaFinProceso);
+      setDentroDeRango(procesoActivo);
 
     } catch (error) {
       console.error('Error al obtener datos de representante: ', error);
+      setDentroDeRango(false);
     } finally {
       setIsLoading(false);
     }
@@ -666,31 +675,23 @@ const VerDatosRepresentante = () => {
                     </div>
 
                     <div className='file-upload-container'>
-                      <div className='file-upload'>
-                        <label className='custom-file-label'>
-                          Copia de Cédula:
-                        </label>
-                        <input
-                          type="file"
-                          name="copiaCedula"
-                          className='custom-file-input'
-                          onChange={handleFileChange}
-                          accept="application/pdf"
-                        />
-                      </div>
 
-                      <div className='file-upload'>
-                        <label className='custom-file-label'>
-                          Croquis:
-                        </label>
-                        <input
-                          className='custom-file-input'
-                          type="file"
-                          name="croquis"
-                          onChange={handleFileChange}
-                          accept="application/pdf"
-                        />
-                      </div>
+                      <FileUploader
+                        label="Copia de Cédula:"
+                        name="copiaCedula"
+                        currentFilePath={representante?.cedula_PDF}
+                        onChange={handleFileChange}
+                        disabled={!dentroDeRango}
+                        error={errors.copiaCedula}
+                      />
+                      <FileUploader
+                        label="Croquis:"
+                        name="croquis"
+                        currentFilePath={representante?.croquis_PDF} // <-- Asumiendo que así se llame tu campo en la BD
+                        onChange={handleFileChange}
+                        disabled={!dentroDeRango}
+                        error={errors.croquis}
+                      />
                     </div>
 
                     {!dentroDeRango && (

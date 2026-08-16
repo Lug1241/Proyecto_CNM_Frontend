@@ -4,6 +4,7 @@ import DatePicker from 'react-datepicker';
 import '../../../Styles/CrearEntidad.css';
 import "react-datepicker/dist/react-datepicker.css";
 import { convertirFecha } from '../../../../../Utils/Funciones';
+import FileUploader from '../../../../components/FileUploader.jsx';
 
 
 function CrearEstudiante({ onCancel, entityToUpdate, onSave, representante }) {
@@ -234,36 +235,23 @@ function CrearEstudiante({ onCancel, entityToUpdate, onSave, representante }) {
 
           </div>
           <div className="file-upload-container">
-            <div className="file-upload">
-              <label htmlFor="copiaCedula" className="custom-file-label">
-                Copia de Cédula:
-              </label>
-              <input
-                type="file"
-                id="copiaCedula"
-                name="copiaCedula"
-                onChange={handleFileChange}
-                accept="application/pdf"
-                className="custom-file-input"
-              />
+            <FileUploader
+              label="Copia de Cédula:"
+              name="copiaCedula"
+              currentFilePath={entityToUpdate?.cedula_PDF} // <-- La ruta que te devuelve el backend
+              onChange={handleFileChange}
+              disabled={false}
+              
+            />
 
-            </div>
-
-            <div className="file-upload">
-              <label htmlFor="matricula_IER" className="custom-file-label">
-                Matrícula IER:
-              </label>
-              <input
-                type="file"
-                id="matricula_IER"
-                name="matricula_IER"
-                onChange={handleFileChange}
-                accept="application/pdf"
-                className="custom-file-input"
-
-              />
-
-            </div>
+            <FileUploader
+              label="Matrícula IER:"
+              name="matricula_IER"
+              currentFilePath={entityToUpdate?.matricula_IER_PDF} // <-- Asumiendo que así se llame tu campo en la BD
+              onChange={handleFileChange}
+              disabled={false}
+              
+            />
           </div>
           <div className='rows-botones'>
             <div className="botones">

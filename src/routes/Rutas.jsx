@@ -47,6 +47,7 @@ import ReporteEstudiante from '../vistas/Secretaria/Reportes/ReporteEstudiante.j
 import ReporteGeneral from '../vistas/Secretaria/Reportes/ReporteGeneral.jsx';
 //import InformacionEstudiantes from '../vistas/Secretaria/InformacionEstudiantil/Estudiantes/Index.jsx';
 import RutaProtegida from '../vistas/Login/RutaProtegida.jsx';
+import NotasPendientes from '../vistas/Vicerrector/NotasPendientes/Index.jsx';
 
 function Rutas() {
   return (
@@ -102,6 +103,7 @@ function Rutas() {
         <Route path="/vicerrector/solicitudes" element={<Solicitudes />} />
         <Route path="/vicerrector/panelcursos/calificaciones" element={<Calificaciones />} />
         <Route path="/vicerrector/panelcursos" element={<PanelCursos />} />
+        <Route path="/vicerrector/notas-pendientes" element={<NotasPendientes />} />
 
         {/* SECRETARIA */}
         <Route path="/secretaria/administracion-escolar" element={<GestionEscolar />} />

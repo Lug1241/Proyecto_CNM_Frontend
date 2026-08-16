@@ -5,6 +5,7 @@ import { Editar } from '../../../../../Utils/CRUD/Editar';
 import "../../../Styles/Contenedor.css"
 
 
+
 function ContenedorRepresentantes({ search, filtrar, data, setData, headers, columnsToShow, filterKey, apiEndpoint, CrearEntidad, PK, OnView}) {
   
   const [entityToUpdate, setEntityToUpdate] = useState(null);

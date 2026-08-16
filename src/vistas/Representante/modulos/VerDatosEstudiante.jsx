@@ -7,16 +7,33 @@ import Swal from 'sweetalert2';
 import "../Styles/VerDatosRepresentante.css";
 import { useAuth } from '../../../Utils/useAuth';
 import { ErrorMessage } from '../../../Utils/ErrorMesaje';
-
+import FileUploader from '../../../vistas/components/FileUploader.jsx';
 function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
   // Protección de ruta para Representante (solo si se usa como página standalone)
-  const auth = useAuth("representante");
-  
-  // Si no está autenticado y no hay props de modal, mostrar mensaje de error
-  if (!auth.isAuthenticated && !onCancel) {
-    return <ErrorMessage message="No tienes permisos para acceder a esta página" />;
-  }
 
+  useEffect(() => {
+    cargarFechasActualizacionDatos();
+  }, []);
+
+  useEffect(() => {
+    if (entity) {
+      setNroCedula(entity.nroCedula || ""); // Set cadena vacia en caso de que haya un dato undefined
+      setPrimerNombre(entity.primer_nombre || "");
+      setPrimerApellido(entity.primer_apellido || "");
+      setSegundoNombre(entity.segundo_nombre || "");
+      setSegundoApellido(entity.segundo_apellido || "");
+      setNivel(entity.nivel || "");
+      setGenero(entity.genero || "");
+      setJornada(entity.jornada || "");
+      setFechaNacimiento(toISO(entity.fecha_nacimiento));
+      setGrupoEtnico(entity.grupo_etnico || "");
+      setEspecialidad(entity.especialidad || "");
+      setIER(entity.IER || "");
+      setNroCedulaRepresentante(entity.nroCedula_representante || "");
+      setDireccion(entity.direccion || "");
+
+    }
+  }, [entity]);
   const [nroCedula, setNroCedula] = useState(""); // Inicializar con cadena vacia si es que hay valores undefined en entity
   const [primer_nombre, setPrimerNombre] = useState("");
   const [primer_apellido, setPrimerApellido] = useState("");
@@ -52,7 +69,12 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
   /* 
     OJO FALTA COMPROBAR EL FUNCIONAMIENTO CON LOS ARCHIVOS PDFS SUBIDOS
   */
+  const auth = useAuth("representante");
 
+  // Si no está autenticado y no hay props de modal, mostrar mensaje de error
+  if (!auth.isAuthenticated && !onCancel) {
+    return <ErrorMessage message="No tienes permisos para acceder a esta página" />;
+  }
   if (isLoading) {
     <Loading></Loading>
   }
@@ -80,29 +102,7 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
   };
 
 
-  useEffect(() => {
-    cargarFechasActualizacionDatos();
-  }, []);
 
-  useEffect(() => {
-    if (entity) {
-      setNroCedula(entity.nroCedula || ""); // Set cadena vacia en caso de que haya un dato undefined
-      setPrimerNombre(entity.primer_nombre || "");
-      setPrimerApellido(entity.primer_apellido || "");
-      setSegundoNombre(entity.segundo_nombre || "");
-      setSegundoApellido(entity.segundo_apellido || "");
-      setNivel(entity.nivel || "");
-      setGenero(entity.genero || "");
-      setJornada(entity.jornada || "");
-      setFechaNacimiento(toISO(entity.fecha_nacimiento));
-      setGrupoEtnico(entity.grupo_etnico || "");
-      setEspecialidad(entity.especialidad || "");
-      setIER(entity.IER || "");
-      setNroCedulaRepresentante(entity.nroCedula_representante || "");
-      setDireccion(entity.direccion || "");
-
-    }
-  }, [entity]);
 
   // --- MISMA FILE: ViewDataEstudiante.jsx ---
   const ESPECIALIDADES = [
@@ -609,35 +609,23 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
           </div>
 
           <div className='file-upload-container'>
-            <div className='file-upload'>
-              <label className='custom-file-label'>
-                Copia de Cédula:
-              </label>
-              <input
-                type="file"
-                name="copiaCedula"
-                className='custom-file-input'
-                onChange={handleFileChange}
-                accept="application/pdf"
-                disabled={!dentroDeRango}
-              />
-              {errors.copiaCedula && <span className="error-text">{errors.copiaCedula}</span>}
-            </div>
+            <FileUploader
+              label="Copia de Cédula:"
+              name="copiaCedula"
+              currentFilePath={entity?.cedula_PDF} // <-- La ruta que te devuelve el backend
+              onChange={handleFileChange}
+              disabled={!dentroDeRango}
+              error={errors.copiaCedula}
+            />
 
-            <div className='file-upload'>
-              <label className='custom-file-label'>
-                Matrícula IER:
-              </label>
-              <input
-                className='custom-file-input'
-                type="file"
-                name="matricula_IER"
-                onChange={handleFileChange}
-                accept="application/pdf"
-                disabled={!dentroDeRango}
-              />
-              {errors.matricula_IER && <span className="error-text">{errors.matricula_IER}</span>}
-            </div>
+            <FileUploader
+              label="Matrícula IER:"
+              name="matricula_IER"
+              currentFilePath={entity?.matricula_IER_PDF} // <-- Asumiendo que así se llame tu campo en la BD
+              onChange={handleFileChange}
+              disabled={!dentroDeRango}
+              error={errors.matricula_IER}
+            />
           </div>
 
           {!dentroDeRango && (

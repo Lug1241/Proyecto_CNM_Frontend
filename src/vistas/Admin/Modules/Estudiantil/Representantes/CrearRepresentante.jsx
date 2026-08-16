@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Boton from '../../../../../components/Boton';
 import '../../../Styles/CrearEntidad.css';
+import FileUploader from '../../../../components/FileUploader.jsx';
 
 function CrearRepresentante({ onCancel, entityToUpdate, onSave }) {
   const [nroCedula, setNroCedula] = useState("")
@@ -121,31 +122,22 @@ function CrearRepresentante({ onCancel, entityToUpdate, onSave }) {
             </div>
           </div>
           <div className='file-upload-container'>
-            <div className='file-upload'>
-              <label className='custom-file-label'>
-                Copia de Cédula:
-              </label>
-              <input
-                type="file"
-                name="copiaCedula"
-                className='custom-file-input'
-                onChange={handleFileChange}
-                accept="application/pdf"
-              />
-            </div>
-
-            <div className='file-upload'>
-              <label className='custom-file-label'>
-                Croquis:
-              </label>
-              <input
-                className='custom-file-input'
-                type="file"
-                name="croquis"
-                onChange={handleFileChange}
-                accept="application/pdf"
-              />
-            </div>
+            <FileUploader
+              label="Copia de Cédula:"
+              name="copiaCedula"
+              currentFilePath={entityToUpdate?.cedula_PDF}
+              onChange={handleFileChange}
+              disabled={false}
+              
+            />
+            <FileUploader
+              label="Croquis:"
+              name="croquis"
+              currentFilePath={entityToUpdate?.croquis_PDF} // <-- Asumiendo que así se llame tu campo en la BD
+              onChange={handleFileChange}
+              disabled={false}
+              
+            />
           </div>
           <div className='rows-botones'>
             <div className="botones">

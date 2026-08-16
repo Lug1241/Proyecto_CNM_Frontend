@@ -320,6 +320,7 @@ function MateriasIndividuales() {
             <option value="BM">BM</option>
             <option value="BS">BS</option>
             <option value="BS BCH">BS BCH</option>
+            <option value="BM BS BCH">BM BS BCH</option>
           </select>
         </div>
         <div className="form-group">

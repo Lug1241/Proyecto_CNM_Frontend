@@ -1,0 +1,60 @@
+/* Contenedor principal con fondo sutil para que las tarjetas resalten */
+.contenedor-monitoreo {
+    padding: 15px;
+    background-color: #f4f6f9;
+    border-radius: 8px;
+    min-height: calc(100vh - 100px);
+}
+
+/* Estilos para los textos de las estadísticas */
+.monitoreo-stats-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.monitoreo-stats-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+/* Efecto de tarjeta blanca flotante para la tabla */
+.tabla-contenedor-card {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+/* Color azul institucional para el encabezado de la tabla */
+.tabla-monitoreo thead th {
+    background-color: #003F89 !important; 
+    color: white !important;
+    font-weight: 600;
+    border-bottom: none;
+    padding: 12px;
+}
+
+/* Estilo mejorado para el círculo de pendientes */
+.badge-pendientes {
+    background-color: #f39c12;
+    color: white;
+    font-weight: bold;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(243, 156, 18, 0.3);
+}
+
+/* Ajuste de cursor para los switches */
+.form-switch .form-check-input, 
+.form-switch .form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
