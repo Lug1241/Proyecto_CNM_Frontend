@@ -211,6 +211,7 @@ function CrearEstudiante({ onCancel, entityToUpdate, onSave, representante }) {
                 <option value="1ro Bachillerato">1ro Bachillerato</option>
                 <option value="2do Bachillerato">2do Bachillerato</option>
                 <option value="3ro Bachillerato">3ro Bachillerato</option>
+                <option value="Graduado">Graduado</option>
 
               </select>
             </div>
