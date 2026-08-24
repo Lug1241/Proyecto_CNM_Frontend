@@ -610,7 +610,7 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
 
           <div className='file-upload-container'>
             <FileUploader
-              label="Copia de Cédula:"
+              label="Copia de Cédula Estudiante:"
               name="copiaCedula"
               currentFilePath={entity?.cedula_PDF} // <-- La ruta que te devuelve el backend
               onChange={handleFileChange}
@@ -619,11 +619,11 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
             />
 
             <FileUploader
-              label="Matrícula IER:"
+              label="Matrícula Institución de Educación Regular:"
               name="matricula_IER"
               currentFilePath={entity?.matricula_IER_PDF} // <-- Asumiendo que así se llame tu campo en la BD
               onChange={handleFileChange}
-              disabled={!dentroDeRango}
+              disabled={true} // hay que volver a !dentroDeRango despues de la prueba
               error={errors.matricula_IER}
             />
           </div>
