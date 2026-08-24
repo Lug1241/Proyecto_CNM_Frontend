@@ -618,14 +618,14 @@ function ViewDataEstudiante({ onCancel, isLoading, entity, onUpdated }) {
               error={errors.copiaCedula}
             />
 
-            <FileUploader
+            {/* <FileUploader
               label="Matrícula Institución de Educación Regular:"
               name="matricula_IER"
               currentFilePath={entity?.matricula_IER_PDF} // <-- Asumiendo que así se llame tu campo en la BD
               onChange={handleFileChange}
               disabled={true} // hay que volver a !dentroDeRango despues de la prueba
               error={errors.matricula_IER}
-            />
+            /> */}
           </div>
 
           {!dentroDeRango && (
