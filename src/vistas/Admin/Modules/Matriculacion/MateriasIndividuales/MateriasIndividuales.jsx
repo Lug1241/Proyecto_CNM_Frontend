@@ -172,7 +172,7 @@ function MateriasIndividuales() {
     const dias = asignacion.dias || [];
 
     const docenteObj = docentes.find(
-      (d) => d.nroCedula === asignacion.nroCedula_docente,
+      (d) => d.ID === asignacion.ID_docente,
     );
     const materiaObj = materiasIndividuales.find(
       (m) => m.ID === asignacion.ID_materia,
