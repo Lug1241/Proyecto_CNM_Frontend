@@ -23,7 +23,7 @@ function Calificaciones() {
   const isSecretariaAccess = location.pathname.includes('/secretaria/');
   
   // Aplicar protección de rol según el contexto
-  const auth = useAuth(isSecretariaAccess ? "Secretaria" : ["Profesor", "Administrador", "Vicerrector"]);
+  const auth = useAuth(isSecretariaAccess ? "Secretaria" : ["Profesor", "Administrador", "Vicerrector","Inspector"]);
   
   // Si no está autenticado, no renderizar nada (el hook maneja la redirección)
   if (!auth.isAuthenticated) {

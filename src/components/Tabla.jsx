@@ -10,7 +10,7 @@ const Tabla = ({
   columnasColorear = columnasEditables,
   mostrarEditar = true, mostrarGuardar = true, onEditar, onGuardar, onEliminar, inputsDisabled,
   isWithinRange, rangoTexto, habilitarTodasFilas, forceEdit, clasePersonalizada = "", soloLectura, esPorSolicitud = false, esFilaDeshabilitada,
-  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow }) => {
+  editingRow: externalEditingRow, setEditingRow: externalSetEditingRow, encabezadosVerticales=true}) => {
 
   // Usar estado externo si existe, sino usar estado local
   const [localEditingRow, setLocalEditingRow] = useState(null);
@@ -67,11 +67,14 @@ const Tabla = ({
           <tr className="table-primary">
             {mostrarAcciones.map((col, index) => (
               <th key={index} className={`text-center ${col === columnaFinal ? "columna-final" : ""}`}>
-                {index > 1 && col !== columnaFinal ? (
+                
+                {/* 2. Agrega && encabezadosVerticales a la condición */}
+                {index > 1 && col !== columnaFinal && encabezadosVerticales ? (
                   <span className="vertical-text">{col}</span>
                 ) : (
                   col
                 )}
+
               </th>
             ))}
           </tr>
