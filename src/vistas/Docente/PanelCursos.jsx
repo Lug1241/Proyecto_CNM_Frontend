@@ -13,7 +13,7 @@ import { useAuth } from "../../Utils/useAuth";
 
 function PanelCursos() {
   // Protección de ruta
-  const auth = useAuth(["Profesor", "Administrador", "Vicerrector"]);
+  const auth = useAuth(["Profesor", "Administrador", "Vicerrector","Inspector"]);
 
   // Si no está autenticado, no renderizar nada
   if (!auth.isAuthenticated) {

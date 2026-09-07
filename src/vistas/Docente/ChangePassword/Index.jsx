@@ -6,7 +6,7 @@ import { useAuth } from '../../../Utils/useAuth';
 
 function Index() {
     // Protección de ruta
-    const auth = useAuth("Profesor");
+    const auth = useAuth(["Profesor", "Administrador", "Vicerrector", "Inspector"]);
     
     // Si no está autenticado, no renderizar nada
     if (!auth.isAuthenticated) {
@@ -20,7 +20,7 @@ function Index() {
         const storedUser = localStorage.getItem("usuario");
         const parsedUser = JSON.parse(storedUser);
         console.log("este es el usuario", parsedUser)
-        if (!parsedUser || parsedUser.subRol !== "Profesor") {
+        if (!parsedUser || (parsedUser.subRol !== "Profesor" && parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Vicerrector" && parsedUser.subRol !== "Inspector")) {
             navigate("/")
 
         }

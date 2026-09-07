@@ -7,10 +7,7 @@ import { getModulos,transformModulesForLayout} from "../../getModulos";
 
 
 function Index() {
-  // Protección de ruta
-  
-  
- 
+
   const [usuario, setUsuario] = useState(null);
   const API_URL = import.meta.env.VITE_URL_DEL_BACKEND;
   const navigate = useNavigate()
@@ -21,7 +18,7 @@ function Index() {
     const storedUser = localStorage.getItem("usuario");
     const parsedUser = JSON.parse(storedUser);
 
-    if (!parsedUser || (parsedUser.subRol !== "Profesor"&& parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Vicerrector")) {
+    if (!parsedUser || (parsedUser.subRol !== "Profesor"&& parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Vicerrector" && parsedUser.subRol !== "Inspector")) {
       navigate("/");
     } else {
       setUsuario(parsedUser);

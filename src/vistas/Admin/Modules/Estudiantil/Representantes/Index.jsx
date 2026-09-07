@@ -59,7 +59,7 @@ function Index() {
 
     if (
       !parsedUser ||
-      (parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Secretaria")
+      (parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Secretaria" && parsedUser.subRol !== "Inspector")
     ) {
       navigate("/");
       return;

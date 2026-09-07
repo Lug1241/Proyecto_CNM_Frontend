@@ -10,7 +10,7 @@ import { useAuth } from "../../../Utils/useAuth";
 
 function Index() {
     // Protección de ruta
-    const auth = useAuth("Profesor");
+    const auth = useAuth(["Profesor", "Administrador", "Vicerrector", "Inspector"]);
     
     
 
@@ -43,7 +43,7 @@ function Index() {
         const storedUser = localStorage.getItem("usuario");
         const parsedUser = JSON.parse(storedUser);
 
-        if (!parsedUser || (parsedUser.subRol !== "Profesor")) {
+        if (!parsedUser || (parsedUser.subRol !== "Profesor" && parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Vicerrector" && parsedUser.subRol !== "Inspector")) {
             navigate("/");
         } else {
             setUsuario(parsedUser);

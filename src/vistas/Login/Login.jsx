@@ -80,7 +80,7 @@ function Login() {
       if (user.rol === "representante") {
         navigate("/representante");
       } else if (
-        ["Profesor", "Administrador", "Vicerrector", "Secretaria"].includes(
+        ["Profesor", "Administrador", "Vicerrector", "Secretaria","Inspector"].includes(
           user.subRol
         )
       ) {

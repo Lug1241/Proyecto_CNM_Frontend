@@ -15,7 +15,7 @@ function Index() {
     const storedUser = localStorage.getItem("usuario");
     const parsedUser = JSON.parse(storedUser);
 
-    if (!parsedUser || (parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Secretaria" && parsedUser.subRol !== "Profesor" && parsedUser.subRol !== "Vicerrector")) {
+    if (!parsedUser || (parsedUser.subRol !== "Administrador" && parsedUser.subRol !== "Secretaria" && parsedUser.subRol !== "Profesor" && parsedUser.subRol !== "Vicerrector" && parsedUser.subRol !== "Inspector")) {
       navigate("/");
     } else {
       setUsuario(parsedUser);
