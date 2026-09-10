@@ -318,6 +318,11 @@ function ListaEstudiantes() {
                                     return (
                                     <div key={index} className="clase-item">
                                       <span className="materia-nombre">{asignacion.Materia?.nombre}</span>
+                                      {asignacion.Materia?.tipo?.toLowerCase() === 'grupal' && (
+                                        <span className="horario-time">
+                                          Paralelo: {asignacion.paralelo || 'Sin especificar'}
+                                        </span>
+                                      )}
                                       <span className="docente-nombre">
                                         {asignacion.Docente ? 
                                           `${asignacion.Docente.primer_nombre} ${asignacion.Docente.primer_apellido}` 
