@@ -92,23 +92,34 @@ const VerDatosRepresentante = () => {
       // 1. Saber quién es el usuario desde el localStorage
       const usuarioGuardado = localStorage.getItem("usuario");
       let idRepresentante = null;
+      let userCache = null;
 
       if (usuarioGuardado) {
-        const userCache = JSON.parse(usuarioGuardado);
-        setRepresentante(userCache); // Lo ponemos temporalmente para que la pantalla no se vea vacía
-        idRepresentante = userCache.nroCedula; // O el campo que uses como ID (ej. userCache.ID)
+        userCache = JSON.parse(usuarioGuardado);
+        setRepresentante(userCache);
+        idRepresentante = userCache.nroCedula;
       }
 
       // 2. 👇 AQUÍ ESTÁ LA MAGIA: Traer los datos FRESCOS de la base de datos
       if (idRepresentante) {
         try {
             // Asegúrate de que esta ruta coincida con tu endpoint del backend para obtener 1 representante
-            const { data: representanteFresco } = await axios.get(`${baseURL}/representante/obtener/${idRepresentante}`, headers);
-            
-            setRepresentante(representanteFresco); // 👈 Ahora sí, React tiene las rutas de los PDF actualizadas
-            
-            // Opcional: Actualizamos la "foto" del localStorage por si acaso
-            localStorage.setItem("usuario", JSON.stringify(representanteFresco));
+            const { data: representanteFresco } = await axios.get(
+              `${baseURL}/representante/obtener/${idRepresentante}`,
+              headers
+            );
+
+            const usuarioActualizado = {
+              ...userCache,
+              ...representanteFresco,
+              rol: userCache.rol,
+              subRol: userCache.subRol,
+              type: userCache.type,
+              debeCambiarPassword: userCache.debeCambiarPassword,
+            };
+
+            setRepresentante(usuarioActualizado);
+            localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
         } catch (error) {
             console.error("No se pudo obtener la info fresca de la BD:", error);
         }
@@ -256,8 +267,19 @@ const VerDatosRepresentante = () => {
       .then((res) => {
         setSubmitting(false);
 
-        // Actualizar datos locales y cerrar modal SIN segunda pregunta
-        const usuarioActualizado = res.data;
+        const usuarioSesion = JSON.parse(
+          localStorage.getItem("usuario") || "{}"
+        );
+
+        const usuarioActualizado = {
+          ...usuarioSesion,
+          ...res.data,
+          rol: usuarioSesion.rol,
+          subRol: usuarioSesion.subRol,
+          type: usuarioSesion.type,
+          debeCambiarPassword: usuarioSesion.debeCambiarPassword,
+        };
+
         localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
         setRepresentante(usuarioActualizado);
 
