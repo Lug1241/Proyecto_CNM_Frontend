@@ -1,33 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import ViewData from "../../Admin/Modules/Estudiantil/Estudiantes/ViewData";
 import Header from "../../../components/Header";
 import Layout from "../../../layout/Layout";
-import Boton from "../../../components/Boton";
 import Loading from "../../../components/Loading";
-import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { modulosRepresentante } from "../components/ModulosRepresentante";
 import "../Styles/VerDatosRepresentante.css";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
-import { useAuth } from '../../../Utils/useAuth';
-import FileUploader from '../../../vistas/components/FileUploader.jsx';
+import { useAuth } from "../../../Utils/useAuth";
+import FileUploader from "../../../vistas/components/FileUploader.jsx";
 
 const VerDatosRepresentante = () => {
   // Protección de ruta para Representante
   const auth = useAuth("representante");
 
-  // Si no está autenticado, mostrar mensaje de error
-  if (!auth.isAuthenticated) {
-    return <ErrorMessage message="No tienes permisos para acceder a esta página" />;
-  }
-
   const [representante, setRepresentante] = useState([]);
-  const location = useLocation();
-  const [mostrarModal, setMostrarModal] = useState(false); // Cambiar a false para no mostrar el modal inicialmente
+  const [mostrarModal, setMostrarModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   const [nroCedula, setNroCedula] = useState(""); // Inicializar con cadena vacia si es que hay valores undefined 
   const [primer_nombre, setPrimerNombre] = useState("");
@@ -57,10 +46,6 @@ const VerDatosRepresentante = () => {
   /*
     OJO FALTA COMPROBAR EL FUNCIONAMIENTO CON LOS ARCHIVOS PDFS SUBIDOS
   */
-
-  if (isLoading) {
-    <Loading></Loading>
-  }
 
   useEffect(() => {
     if (representante) {
@@ -92,30 +77,44 @@ const VerDatosRepresentante = () => {
       // 1. Saber quién es el usuario desde el localStorage
       const usuarioGuardado = localStorage.getItem("usuario");
       let idRepresentante = null;
+      let userCache = null;
 
       if (usuarioGuardado) {
-        const userCache = JSON.parse(usuarioGuardado);
-        setRepresentante(userCache); // Lo ponemos temporalmente para que la pantalla no se vea vacía
-        idRepresentante = userCache.nroCedula; // O el campo que uses como ID (ej. userCache.ID)
+        userCache = JSON.parse(usuarioGuardado);
+        setRepresentante(userCache);
+        idRepresentante = userCache.nroCedula;
       }
 
       // 2. 👇 AQUÍ ESTÁ LA MAGIA: Traer los datos FRESCOS de la base de datos
       if (idRepresentante) {
         try {
             // Asegúrate de que esta ruta coincida con tu endpoint del backend para obtener 1 representante
-            const { data: representanteFresco } = await axios.get(`${baseURL}/representante/obtener/${idRepresentante}`, headers);
-            
-            setRepresentante(representanteFresco); // 👈 Ahora sí, React tiene las rutas de los PDF actualizadas
-            
-            // Opcional: Actualizamos la "foto" del localStorage por si acaso
-            localStorage.setItem("usuario", JSON.stringify(representanteFresco));
+            const { data: representanteFresco } = await axios.get(
+              `${baseURL}/representante/obtener/${idRepresentante}`,
+              headers
+            );
+
+            const usuarioActualizado = {
+              ...userCache,
+              ...representanteFresco,
+              rol: userCache.rol,
+              subRol: userCache.subRol,
+              type: userCache.type,
+              debeCambiarPassword: userCache.debeCambiarPassword,
+            };
+
+            setRepresentante(usuarioActualizado);
+            localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
         } catch (error) {
             console.error("No se pudo obtener la info fresca de la BD:", error);
         }
       }
 
       // 3. Obtener la fecha actual del servidor (Tu código original)
-      const { data: response } = await axios.get(`${baseURL}/fechas_procesos/fecha_actual`, headers);
+      await axios.get(
+        `${baseURL}/fechas_procesos/fecha_actual`,
+        headers
+      );
       
       // ... El resto de tu código de las fechas (procesoActivo, etc.) sigue igualito abajo ...
       const { data: fechaActualizacionDatos } = await axios.get(
@@ -136,12 +135,6 @@ const VerDatosRepresentante = () => {
       setIsLoading(false);
     }
   };
-
-
-  const OnCancel = () => {
-    // Simplemente navegar hacia atrás sin confirmaciones adicionales
-    navigate(-1);
-  }
 
   const abrirModalActualizar = () => {
     setMostrarModal(true);
@@ -256,8 +249,19 @@ const VerDatosRepresentante = () => {
       .then((res) => {
         setSubmitting(false);
 
-        // Actualizar datos locales y cerrar modal SIN segunda pregunta
-        const usuarioActualizado = res.data;
+        const usuarioSesion = JSON.parse(
+          localStorage.getItem("usuario") || "{}"
+        );
+
+        const usuarioActualizado = {
+          ...usuarioSesion,
+          ...res.data,
+          rol: usuarioSesion.rol,
+          subRol: usuarioSesion.subRol,
+          type: usuarioSesion.type,
+          debeCambiarPassword: usuarioSesion.debeCambiarPassword,
+        };
+
         localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
         setRepresentante(usuarioActualizado);
 
@@ -406,10 +410,6 @@ const VerDatosRepresentante = () => {
     }
   };
 
-  const handleConfirmacion = () => {
-  }
-
-
   const formatearFecha = (fechaIso) => {
     if (!fechaIso) return '';
     const fecha = new Date(`${fechaIso}T00:00:00`); // evita desfase por zona horaria
@@ -440,10 +440,17 @@ const VerDatosRepresentante = () => {
     );
   };
 
-
   useEffect(() => {
+    if (!auth.isAuthenticated) return;
+
     cargarDatosRepresentante();
-  }, []);
+  }, [auth.isAuthenticated]);
+
+  if (!auth.isAuthenticated) {
+    return (
+      <ErrorMessage message="No tienes permisos para acceder a esta página" />
+    );
+  }
 
   return (
     <div>
