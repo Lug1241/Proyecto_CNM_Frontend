@@ -9,20 +9,26 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { getModulos, transformModulesForLayout } from "../../getModulos";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
+import { useAuth } from "../../../Utils/useAuth";
 
 function GestionEscolar() {
   const navigate = useNavigate();
+  const auth = useAuth("Secretaria")
+  const authRole = auth.usuario?.subRol || auth.usuario?.rol;
   const [usuario, setUsuario] = useState(null);
   const [periodos, setPeriodos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modules, setModules] = useState([]);
 
   useEffect(() => {
+    if (!auth.isAuthenticated || authRole !== "Secretaria") {
+      return;
+    }
+
     const storedUser = localStorage.getItem("usuario");
     const storedToken = localStorage.getItem("token");
 
     if (!storedUser || !storedToken) {
-      navigate("/");
       return;
     }
 
@@ -47,7 +53,7 @@ function GestionEscolar() {
       .finally(() => {
         setLoading(false);
       });
-  }, [navigate]);
+  }, [navigate, auth.isAuthenticated, authRole]);
 
   const handleModuloClick = (modulo) => {
     navigate(`/secretaria/periodo/materias/${modulo.id}`, { state: modulo });
@@ -77,6 +83,10 @@ function GestionEscolar() {
     link: `/secretaria/periodo/materias/${periodo.ID}`,
     icono: icono, // sigue usando el ícono grande que tienes al centro
   }));
+
+  if (!auth.isAuthenticated || authRole !== "Secretaria") {
+    return null;
+  }
 
   if (loading) return <Loading />;
 
