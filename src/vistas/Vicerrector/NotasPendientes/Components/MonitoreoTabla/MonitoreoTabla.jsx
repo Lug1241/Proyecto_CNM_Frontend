@@ -1,13 +1,13 @@
 import React from 'react';
 import { Table, Form } from 'react-bootstrap';
 
-function MonitoreoTabla({ docentes, onToggleNotificacion, onDiasChange }) {
-    if (docentes.length === 0) {
-        return <p className="text-muted text-center mt-4">No hay docentes pendientes por monitorear.</p>;
+function MonitoreoTabla({ docentes, onToggleNotificacion, onDiasChange = () => {} }) {
+    if (!docentes || docentes.length === 0) {
+        return <p className="text-muted text-center mt-4">No hay docentes para mostrar.</p>;
     }
     return (
         <div className="tabla-contenedor-card">
-            <div className="table-responsive"> {/* <-- Clave para pantallas pequeñas */}
+            <div className="table-responsive">
                 <Table hover className="align-middle tabla-monitoreo mb-0">
                     <thead>
                         <tr>
@@ -41,7 +41,6 @@ function MonitoreoTabla({ docentes, onToggleNotificacion, onDiasChange }) {
                                             className={docente.notificacionActiva ? "text-primary fw-semibold" : "text-muted"}
                                         />
                                     </div>
-
                                 </td>
                                 <td>
                                     <div className="d-flex justify-content-center">
