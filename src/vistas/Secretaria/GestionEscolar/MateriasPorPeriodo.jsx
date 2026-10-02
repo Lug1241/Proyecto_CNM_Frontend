@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import { getModulos, transformModulesForLayout } from "../../getModulos";
 import { PiBroomFill } from "react-icons/pi";
+import { useAuth } from "../../../Utils/useAuth";
 import "./MateriasPorPeriodo.css";
 
 const nivelesMap = {
@@ -28,6 +29,8 @@ const nivelesMap = {
 function MateriasPorPeriodo() {
     const { idPeriodo } = useParams();
     const navigate = useNavigate();
+    const auth = useAuth("Secretaria");
+    const authRole = auth.usuario?.subRol || auth.usuario?.rol;
     const [usuario, setUsuario] = useState(null);
     const [modules, setModules] = useState([]);
     const [asignaciones, setAsignaciones] = useState([]);
@@ -37,8 +40,13 @@ function MateriasPorPeriodo() {
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
+        if (!auth.isAuthenticated || authRole !== "Secretaria") {
+            return;
+        }
+
         const storedUser = localStorage.getItem("usuario");
         const token = localStorage.getItem("token");
+
         if (!storedUser || !token) {
             navigate("/");
             return;
@@ -63,7 +71,7 @@ function MateriasPorPeriodo() {
                 Swal.fire("Error", "No se pudieron cargar las materias del período.", "error");
             })
             .finally(() => setLoading(false));
-    }, [idPeriodo, navigate]);
+    }, [idPeriodo, navigate, auth.isAuthenticated, authRole]);
 
     const agruparPorNivelData = (data) => {
         const grupos = {};
@@ -111,6 +119,10 @@ function MateriasPorPeriodo() {
         });
         return todasLasMaterias;
     };
+
+    if (!auth.isAuthenticated || authRole !== "Secretaria") {
+        return null;
+    }
 
     if (loading) return <Loading />;
 

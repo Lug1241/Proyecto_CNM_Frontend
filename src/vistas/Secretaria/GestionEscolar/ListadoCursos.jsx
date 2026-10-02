@@ -7,10 +7,13 @@ import Tabla from "../../../components/Tabla";
 import Loading from "../../../components/Loading";
 import { ErrorMessage } from "../../../Utils/ErrorMesaje";
 import { exportarListadoAPDF } from "./FuncionesParaListados";
+import { useAuth } from "../../../Utils/useAuth";
 
 function ListadoCursos() {
   const { id_asignacion } = useParams();
   const navigate = useNavigate();
+  const auth = useAuth("Secretaria");
+  const authRole = auth.usuario?.subRol || auth.usuario?.rol;
   const location = useLocation();
   const datosModulo = location.state || JSON.parse(sessionStorage.getItem("datosModulo") || "{}");
 
@@ -27,6 +30,10 @@ function ListadoCursos() {
   };
 
   useEffect(() => {
+      if (!auth.isAuthenticated || authRole !== "Secretaria") {
+        return;
+      }
+
     const storedUser = localStorage.getItem("usuario");
     const token = localStorage.getItem("token");
 
@@ -56,7 +63,7 @@ function ListadoCursos() {
       })
       .catch(ErrorMessage)
       .finally(() => setLoading(false));
-  }, [id_asignacion, navigate]);
+  }, [id_asignacion, navigate, auth.isAuthenticated, authRole]);
 
   const columnas = []; // Solo usamos Nro y Nómina (que el componente Tabla ya incluye)
 
@@ -77,6 +84,10 @@ function ListadoCursos() {
       "Jornada": determinarJornada(datosModulo.horario),
     },
   };
+
+  if (!auth.isAuthenticated || authRole !== "Secretaria") {
+    return null;
+  }
 
   if (loading) return <Loading />;
 
