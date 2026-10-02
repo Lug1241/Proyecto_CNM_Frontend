@@ -31,6 +31,16 @@ function Notas({ usuario, modules, datosModulo, handleSidebarNavigation, handleE
   const puedeEditarActual = () => {
     const tab = getCurrentTabKey();
     if (!tab) return false;
+    const habilitadoExtra = usuario?.habilitado; // o datosModulo?.habilitado
+    const habilitadoHasta = usuario?.habilitado_hasta; // o datosModulo?.habilitado_hasta
+
+    if (habilitadoExtra && habilitadoHasta) {
+      const ahora = new Date();
+      const fechaLimite = new Date(habilitadoHasta);
+      if (ahora <= fechaLimite) {
+        return true; // Si está dentro de este plazo, se permite editar sin importar el rango normal
+      }
+    }
 
     return getRangoValido(tab);
   };
