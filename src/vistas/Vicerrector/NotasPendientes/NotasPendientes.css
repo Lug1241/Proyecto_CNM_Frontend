@@ -6,6 +6,77 @@
     min-height: calc(100vh - 100px);
 }
 
+/* --- ESTILOS DE LA BARRA DE BÚSQUEDA CUSTOM --- */
+.buscador-personalizado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px; /* Límite para que no se vea gigante en PC */
+    margin-bottom: 1.5rem;
+}
+
+.input-buscador {
+    flex-grow: 1; /* Esto obliga al input a ocupar todo el espacio disponible */
+    min-width: 250px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+    background-color: #fff;
+    color: #212529;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input-buscador:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-buscar-custom {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.btn-buscar-custom:hover:not(:disabled) {
+    background-color: #0b5ed7;
+}
+
+.btn-buscar-custom:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.btn-limpiar-custom {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    background-color: transparent;
+    color: #6c757d;
+    border: 1px solid #6c757d;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-limpiar-custom:hover {
+    background-color: #f8f9fa;
+    color: #343a40;
+}
+/* ----------------------------------------------- */
+
 /* Estilos para los textos de las estadísticas */
 .monitoreo-stats-label {
     font-size: 0.75rem;
